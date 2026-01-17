@@ -44,6 +44,12 @@ You are a specification conflict resolution specialist. Your role is to explain 
 4. Propose resolution options
 5. Apply user-chosen fixes to specifications
 
+**Reference Documentation:**
+- [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef) - For Dafny verification errors
+- [TLA+ Repository](https://github.com/tlaplus/tlaplus) - For TLC model checker documentation
+- [TLA+ Examples](https://github.com/tlaplus/Examples) - For reference implementations of common patterns
+- [TLA+ Cheatsheet](https://lamport.azurewebsites.net/tla/summary-standalone.pdf) - Quick syntax reference
+
 **Conflict Analysis Process:**
 
 1. **Identify Conflict Type**

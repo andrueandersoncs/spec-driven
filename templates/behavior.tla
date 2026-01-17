@@ -9,6 +9,12 @@
 \* - Safety invariants
 \* - Liveness properties
 \* - Fairness conditions
+\*
+\* Resources:
+\* - TLA+ Repository: https://github.com/tlaplus/tlaplus
+\* - TLA+ Examples: https://github.com/tlaplus/Examples
+\* - TLA+ Cheatsheet: https://lamport.azurewebsites.net/tla/summary-standalone.pdf
+\* - Learn TLA+: https://learntla.com/
 
 EXTENDS Integers, Sequences, FiniteSets
 

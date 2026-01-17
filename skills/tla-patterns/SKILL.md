@@ -352,11 +352,150 @@ Map TLA+ constructs to Dafny for cross-model consistency:
 | Unprimed `x` | `old(x)` in postcondition |
 | Primed `x'` | `x` in postcondition |
 
+## Distributed Systems Patterns
+
+These patterns are commonly used in real-world distributed systems. See the [TLA+ Examples repository](https://github.com/tlaplus/Examples) for complete implementations.
+
+### Pattern: Two-Phase Commit
+
+```tla
+\* Natural language: "All participants agree to commit or all abort"
+VARIABLES rmState, tmState
+
+TypeOK ==
+    /\ rmState \in [ResourceManagers -> {"working", "prepared", "committed", "aborted"}]
+    /\ tmState \in {"init", "committed", "aborted"}
+
+\* Transaction manager decides based on all participants
+TMCommit ==
+    /\ tmState = "init"
+    /\ \A rm \in ResourceManagers: rmState[rm] = "prepared"
+    /\ tmState' = "committed"
+    /\ UNCHANGED rmState
+
+TMAbort ==
+    /\ tmState = "init"
+    /\ tmState' = "aborted"
+    /\ UNCHANGED rmState
+
+\* Safety: Never both committed and aborted
+Consistency ==
+    ~(\E rm1, rm2 \in ResourceManagers:
+        rmState[rm1] = "committed" /\ rmState[rm2] = "aborted")
+```
+
+### Pattern: Leader Election
+
+```tla
+\* Natural language: "Exactly one leader at any time"
+VARIABLES leader, term
+
+TypeOK ==
+    /\ leader \in Nodes \union {None}
+    /\ term \in Nat
+
+\* Safety: At most one leader per term
+OneLeaderPerTerm ==
+    \A n1, n2 \in Nodes:
+        (leader = n1 /\ leader = n2) => n1 = n2
+
+\* Liveness: Eventually a leader is elected
+EventuallyLeader == <>(leader # None)
+
+BecomeLeader(n) ==
+    /\ leader = None
+    /\ \* Election condition (majority vote, etc.)
+    /\ leader' = n
+    /\ term' = term + 1
+```
+
+### Pattern: Termination Detection (Ring)
+
+```tla
+\* Natural language: "Detect when all processes are idle"
+\* Based on EWD840 from TLA+ Examples
+VARIABLES active, color, token
+
+TypeOK ==
+    /\ active \in [Nodes -> BOOLEAN]
+    /\ color \in [Nodes -> {"white", "black"}]
+    /\ token \in [pos: Nodes, color: {"white", "black"}]
+
+\* Safety: Only declare termination when all truly idle
+TerminationSafe ==
+    terminated => \A n \in Nodes: ~active[n]
+
+\* Process can become active if it receives a message
+BecomeActive(n) ==
+    /\ ~active[n]
+    /\ active' = [active EXCEPT ![n] = TRUE]
+    /\ UNCHANGED <<color, token>>
+```
+
+## Consensus Patterns
+
+### Pattern: Quorum Agreement
+
+```tla
+\* Natural language: "Decisions require majority agreement"
+CONSTANTS Nodes, Quorums
+
+\* A quorum system: any two quorums intersect
+ASSUME QuorumAssumption ==
+    /\ \A Q \in Quorums: Q \subseteq Nodes
+    /\ \A Q1, Q2 \in Quorums: Q1 \cap Q2 # {}
+
+VARIABLES votes
+
+\* A value is chosen if a quorum votes for it
+Chosen(v) == \E Q \in Quorums: \A n \in Q: votes[n] = v
+
+\* Safety: At most one value chosen
+Agreement ==
+    \A v1, v2 \in Values:
+        (Chosen(v1) /\ Chosen(v2)) => v1 = v2
+```
+
+### Pattern: Paxos Prepare Phase
+
+```tla
+\* Natural language: "Proposer must get promises before proposing"
+\* Simplified from TLA+ Examples Paxos specification
+VARIABLES promised, accepted
+
+Prepare(p, b) ==
+    \* Proposer p sends prepare with ballot b
+    /\ \* ... proposer logic
+    /\ UNCHANGED accepted
+
+Promise(a, p, b) ==
+    \* Acceptor a promises to proposer p for ballot b
+    /\ promised[a] < b
+    /\ promised' = [promised EXCEPT ![a] = b]
+    /\ \* Return any previously accepted value
+    /\ UNCHANGED accepted
+```
+
 ## Additional Resources
 
 ### Example Files
 - **`examples/account.tla`** - Complete banking state machine with safety and liveness properties
 
-### External References
-- [TLA+ Language Manual](https://lamport.azurewebsites.net/tla/tla.html)
-- [Learn TLA+](https://learntla.com/)
+### Official TLA+ Resources
+| Resource | Description |
+|----------|-------------|
+| [TLA+ Repository](https://github.com/tlaplus/tlaplus) | Official TLA+ tools including TLC model checker and SANY parser |
+| [TLA+ Examples](https://github.com/tlaplus/Examples) | Curated specifications: Paxos, Two-Phase Commit, Raft, and 100+ more |
+| [TLA+ Cheatsheet (PDF)](https://lamport.azurewebsites.net/tla/summary-standalone.pdf) | Quick reference for operators and syntax |
+| [TLA+ Home](https://lamport.azurewebsites.net/tla/tla.html) | Official website with video course |
+| [Learn TLA+](https://learntla.com/) | Interactive tutorial with examples |
+
+### Notable Examples from TLA+ Examples Repository
+| Specification | Pattern Demonstrated |
+|---------------|---------------------|
+| `Paxos` | Consensus algorithm with safety proofs |
+| `TwoPhase` | Distributed transaction commit protocol |
+| `EWD840` | Termination detection in a ring |
+| `Raft` | Leader-based consensus protocol |
+| `DiningPhilosophers` | Classic mutual exclusion problem |
+| `ReadersWriters` | Concurrent access control |

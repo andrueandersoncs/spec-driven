@@ -76,6 +76,8 @@ Ask user which approach to take.
 
 ## TLA+ Model Checking
 
+See the [TLA+ Repository](https://github.com/tlaplus/tlaplus) for tool documentation and the [TLA+ Examples](https://github.com/tlaplus/Examples) for reference specifications.
+
 ### Run TLC
 
 ```bash
@@ -111,6 +113,8 @@ tlc specs/tla/behavior.tla -config specs/tla/behavior.cfg 2>&1
 | Temporal property violated | A liveness property fails (something doesn't eventually happen) |
 | Deadlock reached | System gets stuck with no possible next action |
 | State space too large | Model is too big to check exhaustively |
+
+For detailed TLC documentation, see the [TLA+ Cheatsheet](https://lamport.azurewebsites.net/tla/summary-standalone.pdf) or the [TLA+ Home](https://lamport.azurewebsites.net/tla/tla.html) for the video course.
 
 ### Suggest Fixes
 

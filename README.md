@@ -28,7 +28,7 @@ nix develop
 
 Or install manually:
 - **Dafny**: https://github.com/dafny-lang/dafny/releases (see [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef))
-- **TLA+ Tools**: https://github.com/tlaplus/tlaplus/releases
+- **TLA+ Tools**: https://github.com/tlaplus/tlaplus/releases (see [TLA+ Resources](#tla-resources) below)
 
 ### Plugin Installation
 
@@ -177,6 +177,28 @@ preferences:
 
 # Project-specific notes and context
 ```
+
+## TLA+ Resources
+
+Essential resources for writing and understanding TLA+ specifications:
+
+| Resource | Description |
+|----------|-------------|
+| [TLA+ Repository](https://github.com/tlaplus/tlaplus) | Official TLA+ tools (TLC model checker, SANY parser, PlusCal translator) |
+| [TLA+ Examples](https://github.com/tlaplus/Examples) | Curated collection of TLA+ specifications including Paxos, Two-Phase Commit, and more |
+| [TLA+ Cheatsheet](https://lamport.azurewebsites.net/tla/summary-standalone.pdf) | Quick reference for TLA+ operators and syntax |
+| [Learn TLA+](https://learntla.com/) | Interactive tutorial for learning TLA+ |
+| [TLA+ Home](https://lamport.azurewebsites.net/tla/tla.html) | Official TLA+ website with video course and documentation |
+
+## Dafny Resources
+
+Essential resources for writing and understanding Dafny specifications:
+
+| Resource | Description |
+|----------|-------------|
+| [Dafny Repository](https://github.com/dafny-lang/dafny) | Official Dafny verification language |
+| [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef) | Complete language reference |
+| [Dafny Tutorial](https://dafny.org/latest/OnlineTutorial/guide) | Getting started guide |
 
 ## License
 

@@ -1,6 +1,11 @@
 ---------------------------- MODULE account ----------------------------
 \* Example: Banking Account State Machine
 \* Demonstrates TLA+ patterns for spec-driven development
+\*
+\* Resources:
+\* - TLA+ Repository: https://github.com/tlaplus/tlaplus
+\* - TLA+ Examples: https://github.com/tlaplus/Examples
+\* - TLA+ Cheatsheet: https://lamport.azurewebsites.net/tla/summary-standalone.pdf
 
 EXTENDS Integers, Sequences
 

@@ -88,13 +88,15 @@ For Dafny errors, provide plain language explanation:
 | "invariant might not hold" | State constraint could be violated |
 | "decreases might not decrease" | Loop or recursion might not terminate |
 
-For TLC errors, provide plain language explanation:
+For TLC errors, provide plain language explanation (see [TLA+ Repository](https://github.com/tlaplus/tlaplus) for TLC documentation and [TLA+ Examples](https://github.com/tlaplus/Examples) for reference specs):
 
 | Error Pattern | Explanation |
 |---------------|-------------|
 | "Invariant X is violated" | A safety property fails in some reachable state |
 | "Temporal property violated" | A liveness property fails |
 | "Deadlock reached" | System can get stuck with no next action |
+
+Users can reference the [TLA+ Cheatsheet](https://lamport.azurewebsites.net/tla/summary-standalone.pdf) for syntax help.
 
 **Output Format:**
 

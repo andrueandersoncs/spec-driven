@@ -79,7 +79,7 @@ Identify and route assertions that constrain what is true at any single point in
 
 ## Classify Behavior Assertions (Route to TLA+)
 
-Identify and route assertions that constrain sequences of states over time.
+Identify and route assertions that constrain sequences of states over time. See the [TLA+ Repository](https://github.com/tlaplus/tlaplus) for tools and the [TLA+ Examples](https://github.com/tlaplus/Examples) for reference specifications.
 
 ### Liveness
 **Pattern**: "Eventually X" / "X leads to Y"
@@ -171,6 +171,22 @@ When both models exist, check consistency between them:
 ### Reference Files
 - **`references/classification-examples.md`** - Extended examples for each assertion category
 - **`references/assertion-manifest-format.md`** - Complete schema for `specs/assertions.json` manifest
+
+### External Resources
+
+**TLA+ (Behavior)**:
+| Resource | Description |
+|----------|-------------|
+| [TLA+ Repository](https://github.com/tlaplus/tlaplus) | Official TLA+ tools (TLC, SANY, PlusCal) |
+| [TLA+ Examples](https://github.com/tlaplus/Examples) | Curated specifications including Paxos, Raft, Two-Phase Commit |
+| [TLA+ Cheatsheet](https://lamport.azurewebsites.net/tla/summary-standalone.pdf) | Quick reference for operators and syntax |
+| [Learn TLA+](https://learntla.com/) | Interactive tutorial |
+
+**Dafny (Structure)**:
+| Resource | Description |
+|----------|-------------|
+| [Dafny Repository](https://github.com/dafny-lang/dafny) | Official Dafny verification language |
+| [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef) | Complete language reference |
 
 ### Workflow Integration
 
