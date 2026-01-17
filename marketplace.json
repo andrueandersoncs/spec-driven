@@ -5,8 +5,8 @@
   "author": {
     "name": "Andrue Anderson"
   },
-  "repository": "https://github.com/YOUR_USERNAME/spec-driven",
-  "homepage": "https://github.com/YOUR_USERNAME/spec-driven#readme",
+  "repository": "https://github.com/andrueandersoncs/spec-driven",
+  "homepage": "https://github.com/andrueandersoncs/spec-driven#readme",
   "license": "MIT",
   "keywords": [
     "formal-verification",
