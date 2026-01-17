@@ -1,22 +1,25 @@
 {
-  "name": "spec-driven",
-  "version": "0.1.0",
-  "description": "Specification-driven development using formal verification (Dafny + TLA+) to generate correct software from user intent",
-  "author": {
-    "name": "Andrue Anderson"
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "spec-driven-marketplace",
+  "version": "1.0.0",
+  "description": "Marketplace for the spec-driven formal verification plugin",
+  "owner": {
+    "name": "Andrue Anderson",
+    "email": "andrue@example.com"
   },
-  "repository": "https://github.com/andrueandersoncs/spec-driven",
-  "license": "MIT",
-  "keywords": [
-    "formal-verification",
-    "dafny",
-    "tla+",
-    "specification",
-    "code-generation",
-    "requirements",
-    "correctness",
-    "contracts",
-    "effect",
-    "effect-ts"
+  "plugins": [
+    {
+      "name": "spec-driven",
+      "description": "Specification-driven development using formal verification (Dafny + TLA+) to generate correct software from user intent",
+      "source": {
+        "source": "github",
+        "repo": "andrueandersoncs/spec-driven"
+      },
+      "category": "development",
+      "version": "0.1.0",
+      "author": {
+        "name": "Andrue Anderson"
+      }
+    }
   ]
 }
