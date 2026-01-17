@@ -186,3 +186,5 @@ The plugin includes hooks that guide the workflow:
 - **Effect GitHub**: https://github.com/Effect-TS/effect
 - **Effect Examples**: https://github.com/Effect-TS/examples
 - **Effect LSP/DevTools**: https://effect.website/docs/getting-started/devtools/
+- **Nix Manual**: https://nix.dev/manual/nix/2.28/
+- **Nix Best Practices**: https://nix.dev/guides/best-practices

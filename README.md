@@ -289,6 +289,29 @@ This plugin targets [Bun](https://bun.sh/) as the runtime for generated TypeScri
 | [Bun Package Manager](https://bun.sh/docs/cli/install) | Fast package management |
 | [Bun Test Runner](https://bun.sh/docs/cli/test) | Built-in test runner |
 
+## Docker Resources
+
+This plugin generates Docker deployment artifacts for containerizing Bun applications:
+
+| Resource | Description |
+|----------|-------------|
+| [Dockerfile Reference](https://docs.docker.com/reference/dockerfile/) | Complete Dockerfile instruction reference |
+| [Dockerfile Best Practices](https://docs.docker.com/build/building/best-practices/) | Official best practices guide |
+| [Multi-stage Builds](https://docs.docker.com/build/building/multi-stage/) | Building smaller, more secure images |
+| [Compose File Reference](https://docs.docker.com/reference/compose-file/) | Docker Compose specification |
+| [Docker Security](https://docs.docker.com/engine/security/) | Container security overview |
+
+## Nix Resources
+
+This plugin provides a [Nix flake](https://nix.dev/concepts/flakes) for reproducible development environments:
+
+| Resource | Description |
+|----------|-------------|
+| [Nix Manual](https://nix.dev/manual/nix/2.28/) | Official Nix reference manual |
+| [Nix Best Practices](https://nix.dev/guides/best-practices) | Guidelines for writing quality Nix code |
+| [Nix Flakes](https://nix.dev/concepts/flakes) | Introduction to Nix flakes |
+| [nix.dev Tutorials](https://nix.dev/tutorials/) | Getting started with Nix |
+
 ## License
 
 MIT

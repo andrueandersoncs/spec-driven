@@ -13,26 +13,24 @@
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
+          buildInputs = [
             # Dafny - Formal verification language
-            dafny
+            pkgs.dafny
 
             # Java runtime for TLC model checker
-            openjdk17
+            pkgs.openjdk17
 
             # TLA+ tools (TLC model checker, TLAPS proof system)
-            tlaplus
-            tlaplus18  # Alternative if tlaplus has issues
+            pkgs.tlaplus
+            pkgs.tlaplus18  # Alternative if tlaplus has issues
 
-            # Node.js for TypeScript development
-            nodejs_20
-            nodePackages.typescript
-            nodePackages.typescript-language-server
+            # Bun - JavaScript/TypeScript runtime
+            pkgs.bun
 
             # Useful utilities
-            jq          # JSON processing
-            yq          # YAML processing
-            graphviz    # For TLA+ state graph visualization
+            pkgs.jq          # JSON processing
+            pkgs.yq          # YAML processing
+            pkgs.graphviz    # For TLA+ state graph visualization
           ];
 
           shellHook = ''
@@ -41,12 +39,13 @@
             echo "Available tools:"
             echo "  dafny     - Formal verification (structure specs)"
             echo "  tlc       - TLA+ model checker (behavior specs)"
-            echo "  node/npm  - TypeScript development"
+            echo "  bun       - TypeScript runtime & package manager"
             echo ""
             echo "Quick commands:"
             echo "  dafny verify specs/dafny/*.dfy     - Verify Dafny specs"
             echo "  tlc specs/tla/behavior.tla        - Model check TLA+ specs"
             echo "  dafny build --target:js ...       - Extract to JavaScript"
+            echo "  bun run src/index.ts              - Run TypeScript directly"
             echo ""
 
             # Set up TLA+ tools path
