@@ -148,6 +148,25 @@ The plugin includes proactive agents:
 - **project-scaffolder**: Proactively scaffolds runnable projects after generation
 - **runtime-validator**: Diagnoses runtime failures and maps to source assertions
 
+## Hooks
+
+The plugin includes hooks that guide the workflow and ensure verification integrity:
+
+| Event | Purpose |
+|-------|---------|
+| **SessionStart** | Loads spec context and reports current project state |
+| **PreToolUse** | Warns if generating code without verified specs; warns if testing without scaffolding |
+| **PostToolUse** | Reminds to verify after spec changes; suggests scaffolding after code generation |
+| **Stop** | Checks for incomplete workflow steps before ending session |
+
+### Hook Behaviors
+
+- **Spec Change Detection**: When `.dfy` or `.tla` files are modified, reminds to run `/verify`
+- **Scaffolding Guidance**: When code is generated but `package.json` is missing, suggests `/scaffold`
+- **Verification Guard**: Warns when generating implementation code without verified specifications
+- **Test Readiness**: Warns when running tests without proper project scaffolding
+- **Session Summary**: Before stopping, checks if specs need verification, assertions need capture, or code needs scaffolding
+
 ## Assertion Types
 
 ### Structure (Dafny)
