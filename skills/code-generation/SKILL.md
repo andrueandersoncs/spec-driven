@@ -355,6 +355,9 @@ project/
 
 ## Additional Resources
 
+### Reference Files
+- **`references/effect-schema-guide.md`** - Comprehensive Effect Schema guide with primitives, refinements, branded types, and error handling (from official Effect docs)
+
 ### Example Files
 - **`examples/account-generated.ts`** - Complete generated TypeScript from Dafny/TLA+ specs
 

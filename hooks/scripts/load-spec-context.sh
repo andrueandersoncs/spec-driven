@@ -57,7 +57,13 @@ else
   output="No specs/ directory found. Use /probe-domain to start spec-driven development."
 fi
 
-# Output context message
+# Output context message using jq for proper JSON escaping
 if [ -n "$output" ]; then
-  echo "{\"systemMessage\": \"$output\"}"
+  if command -v jq &> /dev/null; then
+    jq -n --arg msg "$output" '{"systemMessage": $msg}'
+  else
+    # Fallback: escape special characters manually if jq unavailable
+    escaped=$(printf '%s' "$output" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\n/\\n/g')
+    echo "{\"systemMessage\": \"$escaped\"}"
+  fi
 fi

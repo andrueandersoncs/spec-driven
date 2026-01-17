@@ -478,6 +478,9 @@ Promise(a, p, b) ==
 
 ## Additional Resources
 
+### Reference Files
+- **`references/tlc-guide.md`** - Comprehensive TLC model checker guide with command-line options, error interpretation, and debugging techniques (from official TLA+ docs)
+
 ### Example Files
 - **`examples/account.tla`** - Complete banking state machine with safety and liveness properties
 

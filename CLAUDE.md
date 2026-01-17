@@ -32,10 +32,16 @@ spec-driven/
 ├── commands/                    # Slash command definitions
 ├── agents/                      # Proactive agent definitions
 ├── skills/                      # Knowledge and pattern libraries
+│   ├── */SKILL.md               # Skill definitions
+│   ├── */references/            # Detailed documentation from official sources
+│   └── */examples/              # Working code examples
 ├── hooks/
 │   ├── hooks.json               # Hook event configuration
 │   └── scripts/
 │       └── load-spec-context.sh # SessionStart script
+├── scripts/                     # Utility scripts
+│   ├── check-tools.sh           # Verify required tools are installed
+│   └── validate-assertions.sh   # Validate assertions.json schema
 ├── templates/                   # Starter templates for new projects
 │   ├── assertions.json          # Empty assertion manifest
 │   ├── structure.dfy            # Dafny specification template
