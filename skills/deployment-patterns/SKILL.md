@@ -1,7 +1,7 @@
 ---
 name: deployment-patterns
 version: 0.1.0
-description: This skill provides Docker deployment patterns for spec-driven TypeScript applications. Use when generating Dockerfiles, docker-compose configurations, health checks, or containerizing Bun applications. Triggers on "Docker", "containerize", "deploy", "Dockerfile", "docker-compose", "health check", "production deployment".
+description: This skill should be used when deploying spec-driven TypeScript applications, generating Docker configurations, or when the user asks "create Dockerfile", "write docker-compose", "containerize this app", "add health checks", "deploy to production", "generate deployment files", "Bun Docker image", "multi-stage build", or "Docker security hardening".
 ---
 
 # Deployment Patterns
@@ -444,12 +444,21 @@ specs/
 generated/
 ```
 
-## Examples
+## Additional Resources
 
-See `examples/` for complete configurations:
-- `web-service/` - Full web service deployment
-- `cli-tool/` - CLI binary distribution
-- `data-pipeline/` - Scheduled job deployment
+### Reference Files
+
+For comprehensive Docker documentation and patterns:
+- **`references/docker-reference.md`** - Complete Docker reference for Bun applications including Dockerfile instructions, multi-stage builds, Compose configuration, health checks, and security best practices
+
+### Example Files
+
+Working examples ready to copy and customize:
+- **`examples/Dockerfile.web-service`** - Production-ready web service Dockerfile
+- **`examples/Dockerfile.cli`** - CLI tool compiled binary Dockerfile
+- **`examples/docker-compose.yml`** - Full production deployment with PostgreSQL
+- **`examples/docker-compose.dev.yml`** - Development environment with hot reloading
+- **`examples/health.ts`** - Health check endpoint implementation
 
 ## Docker Documentation References
 

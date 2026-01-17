@@ -1,0 +1,76 @@
+# docker-compose.dev.yml
+# Development environment with hot reloading
+# @generated template - customize for your project
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up
+#   docker compose -f docker-compose.dev.yml down
+#
+# Note: version field is obsolete and omitted
+
+services:
+  # ==========================================================================
+  # Development Application Service
+  # ==========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage with dev dependencies
+
+    container_name: spec-driven-dev
+
+    ports:
+      - "${PORT:-3000}:3000"
+
+    # Mount source for hot reloading
+    # See: https://docs.docker.com/reference/compose-file/services/#volumes
+    volumes:
+      - ./src:/app/src:ro        # Source code (read-only)
+      - ./package.json:/app/package.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://app:devpassword@db:5432/appdb
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Run with watch mode for hot reloading
+    command: ["bun", "run", "--watch", "src/index.ts"]
+
+    # No restart in dev - let errors surface
+    restart: "no"
+
+  # ==========================================================================
+  # Development Database Service
+  # ==========================================================================
+  db:
+    image: postgres:16-alpine
+
+    container_name: spec-driven-dev-db
+
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+
+    environment:
+      - POSTGRES_DB=appdb
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=devpassword
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+    # Expose database port for local access in development
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata-dev:
+    name: spec-driven-pgdata-dev

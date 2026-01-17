@@ -480,6 +480,7 @@ Promise(a, p, b) ==
 
 ### Reference Files
 - **`references/tlc-guide.md`** - Comprehensive TLC model checker guide with command-line options, error interpretation, and debugging techniques (from official TLA+ docs)
+- **`references/tla-operators.md`** - Complete TLA+ operators reference including logic, sets, functions, sequences, temporal operators, and standard modules
 
 ### Example Files
 - **`examples/account.tla`** - Complete banking state machine with safety and liveness properties

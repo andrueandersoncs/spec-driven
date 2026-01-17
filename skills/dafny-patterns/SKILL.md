@@ -349,6 +349,7 @@ Map Dafny constructs to TLA+ for cross-model consistency:
 
 ### Reference Files
 - **`references/common-errors.md`** - Comprehensive guide to Dafny verification errors, causes, and fixes (from official Dafny docs)
+- **`references/dafny-quick-reference.md`** - Complete Dafny syntax reference including types, statements, expressions, specifications, and common patterns
 
 ### Example Files
 - **`examples/account.dfy`** - Complete banking domain example with invariants, contracts, and transfers

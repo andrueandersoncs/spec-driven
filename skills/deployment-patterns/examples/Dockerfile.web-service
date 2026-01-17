@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:1
+# Dockerfile for spec-driven web service
+# @generated template - customize for your project
+#
+# Build: docker build -t myapp:latest .
+# Run:   docker run -p 3000:3000 myapp:latest
+
+# ==============================================================================
+# Build Stage
+# ==============================================================================
+FROM oven/bun:1 AS builder
+
+WORKDIR /app
+
+# Install dependencies first for better layer caching
+# See: https://docs.docker.com/build/cache/#order-your-layers
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
+
+# Copy source and build
+COPY src/ ./src/
+COPY tsconfig.json ./
+
+# Build for production
+RUN bun build src/index.ts --outdir dist --target bun --minify
+
+# ==============================================================================
+# Production Stage
+# ==============================================================================
+FROM oven/bun:1-slim AS production
+
+WORKDIR /app
+
+# Copy production artifacts
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package.json ./
+
+# Security: run as non-root user
+# See: https://docs.docker.com/engine/security/
+USER bun
+
+# Health check for container orchestration
+# See: https://docs.docker.com/reference/dockerfile/#healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD bun run dist/health.js || exit 1
+
+# Document exposed port
+EXPOSE 3000
+
+# Metadata labels
+LABEL org.opencontainers.image.title="spec-driven-app"
+LABEL org.opencontainers.image.description="Spec-driven TypeScript application"
+LABEL com.spec-driven.verified="true"
+
+# Start the application
+CMD ["bun", "run", "dist/index.js"]

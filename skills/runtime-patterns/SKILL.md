@@ -1,7 +1,7 @@
 ---
 name: runtime-patterns
 version: 0.1.0
-description: This skill provides TypeScript runtime validation patterns for spec-driven development. Use when generating runtime validators from Dafny specs, implementing Effect Schemas from refinement types, creating branded types, using Effect for error handling, or implementing runtime contract checking. Triggers on "runtime validation", "Effect Schema from spec", "branded types", "Effect error handling", "contract checking".
+description: This skill should be used when implementing runtime validation in TypeScript, generating validators from Dafny specs, creating Effect Schemas from refinement types, working with branded types, or when the user asks "generate runtime validation", "create Effect Schema from spec", "implement branded types", "use Effect for error handling", "add contract checking", "validate at API boundary", "Effect Schema patterns", or "TypeScript validation from Dafny".
 ---
 
 # Runtime Validation Patterns
@@ -413,17 +413,22 @@ const withdrawHandler = HttpApiEndpoint.handle(withdrawEndpoint, ({ payload }) =
 | `datatype X = A \| B \| C` | `Schema.Literal('A', 'B', 'C')` |
 | `class C { var x: int }` | `Schema.Struct({ x: Schema.Number.pipe(Schema.int()) })` |
 
-## External References
+## Additional Resources
 
-- **Effect Documentation**: https://effect.website/docs
-- **Effect Schema**: https://effect.website/docs/schema/introduction
-- **Effect Schema Filters**: https://effect.website/docs/schema/filters
-- **Effect Schema Branded Types**: https://effect.website/docs/schema/advanced-usage#branded-types
-- **Effect Platform HTTP**: https://effect.website/docs/platform/http-server
+### Reference Files
 
-## Examples
+For detailed patterns and comprehensive documentation:
+- **`references/effect-patterns.md`** - Complete Effect patterns reference including Schema filters, branded types, TaggedError, and Dafny-to-Effect mapping
+
+### Example Files
 
 See `examples/` for complete implementations:
-- `validated-account.ts` - Full account with all patterns
-- `order-state-machine.ts` - TLA+-derived state machine
-- `api-validation.ts` - HTTP API with Effect Schema validation
+- **`validated-account.ts`** - Full account with all patterns
+
+### External References
+
+- [Effect Documentation](https://effect.website/docs)
+- [Effect Schema](https://effect.website/docs/schema/introduction)
+- [Effect Schema Filters](https://effect.website/docs/schema/filters)
+- [Effect Schema Branded Types](https://effect.website/docs/schema/advanced-usage#branded-types)
+- [Effect Platform HTTP](https://effect.website/docs/platform/http-server)

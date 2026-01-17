@@ -1,0 +1,105 @@
+# docker-compose.yml
+# Spec-driven web service with PostgreSQL database
+# @generated template - customize for your project
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f app
+#   docker compose down
+#
+# Note: version field is obsolete and omitted
+# See: https://docs.docker.com/reference/compose-file/version-and-name/
+
+services:
+  # ==========================================================================
+  # Application Service
+  # ==========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+
+    container_name: spec-driven-app
+
+    ports:
+      - "${PORT:-3000}:3000"
+
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://app:${DB_PASSWORD:-secret}@db:5432/appdb
+
+    # Wait for database to be healthy before starting
+    # See: https://docs.docker.com/reference/compose-file/services/#depends_on
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Health check
+    # See: https://docs.docker.com/reference/compose-file/services/#healthcheck
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+    # Restart policy
+    # See: https://docs.docker.com/reference/compose-file/services/#restart
+    restart: unless-stopped
+
+    # Resource limits
+    # See: https://docs.docker.com/reference/compose-file/deploy/#resources
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+
+  # ==========================================================================
+  # Database Service
+  # ==========================================================================
+  db:
+    image: postgres:16-alpine
+
+    container_name: spec-driven-db
+
+    # Named volume for data persistence
+    # See: https://docs.docker.com/reference/compose-file/volumes/
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    environment:
+      - POSTGRES_DB=appdb
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-secret}
+
+    # Database health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    restart: unless-stopped
+
+    # Don't expose database port externally by default
+    # Uncomment for local development access:
+    # ports:
+    #   - "5432:5432"
+
+# ==========================================================================
+# Named Volumes
+# ==========================================================================
+volumes:
+  pgdata:
+    name: spec-driven-pgdata
