@@ -1,5 +1,5 @@
 {
-  "description": "Hooks for spec-driven development: validate specs after changes and ensure verification before code generation",
+  "description": "Hooks for spec-driven development: validate specs, guide workflow, ensure verification before code generation",
   "hooks": {
     "PostToolUse": [
       {
@@ -8,6 +8,16 @@
           {
             "type": "prompt",
             "prompt": "Check if this file write/edit modified a Dafny (.dfy) or TLA+ (.tla) specification file. If so, remind that verification should be run with /verify to check consistency. If the file was in specs/dafny/ or specs/tla/, note this for the user. If not a spec file, no action needed.",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if this write created or updated files in src/ directory from code generation (/generate command or code-generator agent). If so, and if package.json does NOT exist, suggest running /scaffold to make the code runnable. If package.json exists but dependencies are missing (e.g., zod is used but not in package.json), suggest running 'bun install' or /scaffold to update.",
             "timeout": 15
           }
         ]
@@ -23,6 +33,16 @@
             "timeout": 20
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If this bash command is 'bun test' or 'npm test' and no package.json exists, warn that tests cannot run without scaffolding. Suggest running /scaffold first. If package.json exists but node_modules is missing, suggest running 'bun install' first.",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [
@@ -31,8 +51,8 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Before stopping, check if we're in a spec-driven development workflow. If specs were modified but not verified, remind user to run /verify. If assertions were discussed but not captured in specs/assertions.json, remind user to run /interview to capture them. If everything looks complete, approve stopping.",
-            "timeout": 15
+            "prompt": "Before stopping, check the spec-driven development workflow state: 1) If specs were modified but not verified, remind user to run /verify. 2) If assertions were discussed but not captured in specs/assertions.json, remind to run /interview. 3) If code was generated but project not scaffolded (no package.json), remind to run /scaffold. 4) If everything looks complete, approve stopping with a summary of the project state.",
+            "timeout": 20
           }
         ]
       }
