@@ -1,0 +1,53 @@
+{
+  "description": "Hooks for spec-driven development: validate specs after changes and ensure verification before code generation",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if this file write/edit modified a Dafny (.dfy) or TLA+ (.tla) specification file. If so, remind that verification should be run with /verify to check consistency. If the file was in specs/dafny/ or specs/tla/, note this for the user. If not a spec file, no action needed.",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If this write/edit is generating implementation code (in src/ directory) from specifications, verify that: 1) specs/assertions.json exists with confirmed assertions, 2) formal specs have been verified recently. If generating code without verified specs, warn that this may produce incorrect code. For non-generated code or spec files themselves, approve without warning.",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before stopping, check if we're in a spec-driven development workflow. If specs were modified but not verified, remind user to run /verify. If assertions were discussed but not captured in specs/assertions.json, remind user to run /interview to capture them. If everything looks complete, approve stopping.",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/load-spec-context.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

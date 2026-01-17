@@ -1,0 +1,18 @@
+{
+  "name": "spec-driven",
+  "version": "0.1.0",
+  "description": "Specification-driven development agent using formal verification (Dafny + TLA+) to generate correct software from user intent",
+  "author": {
+    "name": "Andrue Anderson"
+  },
+  "keywords": [
+    "formal-verification",
+    "dafny",
+    "tla+",
+    "specification",
+    "code-generation",
+    "requirements",
+    "correctness"
+  ],
+  "license": "MIT"
+}

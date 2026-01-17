@@ -1,0 +1,17 @@
+# Plugin settings (user-specific)
+.claude/*.local.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp

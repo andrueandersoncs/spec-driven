@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "archetype": null,
+  "domains": [],
+  "actors": [],
+  "capabilities": {},
+  "boundaries": [],
+  "constraints": [],
+  "assertions": [],
+  "metadata": {
+    "created": null,
+    "lastModified": null,
+    "lastVerified": null
+  }
+}

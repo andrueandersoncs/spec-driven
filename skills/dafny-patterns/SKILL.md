@@ -1,0 +1,317 @@
+---
+name: Dafny Patterns
+description: This skill should be used when writing Dafny specifications, creating refinement types, writing method contracts (requires/ensures), defining class invariants, working with Dafny verification, or when the user asks "write a Dafny spec", "create a contract", "define an invariant", "add preconditions", "add postconditions", or "verify this with Dafny".
+version: 0.1.0
+---
+
+# Dafny Patterns
+
+Write structural specifications using Dafny's verification-aware language.
+
+## Core Concepts
+
+Dafny models **structure**: what is true at any single point in time.
+
+| Construct | Purpose | Verification |
+|-----------|---------|--------------|
+| Refinement types | Constrain data values | Compile-time + Z3 |
+| Class invariants | Entity state constraints | Checked at boundaries |
+| Preconditions (`requires`) | Operation input constraints | Caller responsibility |
+| Postconditions (`ensures`) | Operation output guarantees | Implementer responsibility |
+| Predicates | Reusable boolean conditions | Used in other constructs |
+
+## File Organization
+
+Organize Dafny specs in `specs/dafny/`:
+
+```
+specs/dafny/
+├── structure.dfy      # Main types and entities
+├── operations.dfy     # Methods and their contracts
+├── predicates.dfy     # Reusable predicates
+└── domains/           # Domain-specific modules
+    ├── finance.dfy
+    └── auth.dfy
+```
+
+## Refinement Types
+
+Constrain primitive types with logical predicates.
+
+### Pattern: Constrained Numeric
+
+```dafny
+// Natural language: "Age must be positive and under 150"
+type Age = x: int | 0 < x < 150
+
+// Natural language: "Price is non-negative"
+type Price = x: real | x >= 0.0
+
+// Natural language: "Quantity is positive"
+type Quantity = x: int | x > 0
+```
+
+### Pattern: Constrained String
+
+```dafny
+// Non-empty strings
+type NonEmptyString = s: string | |s| > 0
+
+// Bounded length
+type Username = s: string | 3 <= |s| <= 20
+```
+
+### Pattern: Subset Types
+
+```dafny
+// Natural language: "Only certain status values are valid"
+datatype Status = Pending | Active | Completed | Cancelled
+
+// Natural language: "Active statuses are Pending or Active"
+type ActiveStatus = s: Status | s.Pending? || s.Active?
+```
+
+## Class Invariants
+
+State constraints that hold between method calls.
+
+### Pattern: Simple Invariant
+
+```dafny
+class Account {
+  var balance: int
+
+  // Natural language: "Balance never negative"
+  invariant balance >= 0
+
+  constructor(initial: int)
+    requires initial >= 0
+  {
+    balance := initial;
+  }
+}
+```
+
+### Pattern: Computed Invariant
+
+```dafny
+class ShoppingCart {
+  var items: seq<CartItem>
+  var total: Price
+
+  // Natural language: "Total equals sum of item prices"
+  invariant total == SumPrices(items)
+
+  function SumPrices(items: seq<CartItem>): Price {
+    if |items| == 0 then 0.0
+    else items[0].price + SumPrices(items[1..])
+  }
+}
+```
+
+### Pattern: Relationship Invariant
+
+```dafny
+class Order {
+  var customer: Customer  // Non-null reference
+  var items: seq<OrderItem>
+
+  // Natural language: "Order always has at least one item"
+  invariant |items| > 0
+
+  // Natural language: "All items reference this order"
+  invariant forall i :: 0 <= i < |items| ==> items[i].order == this
+}
+```
+
+## Method Contracts
+
+Specify operation behavior with pre/postconditions.
+
+### Pattern: Basic Contract
+
+```dafny
+method Withdraw(amount: int) returns (success: bool)
+  // Natural language: "Can only withdraw positive amount"
+  requires amount > 0
+  // Natural language: "Can only withdraw if sufficient funds"
+  requires amount <= balance
+  // Natural language: "Success means balance decreased by amount"
+  ensures success ==> balance == old(balance) - amount
+  // Natural language: "Failure means balance unchanged"
+  ensures !success ==> balance == old(balance)
+{
+  balance := balance - amount;
+  success := true;
+}
+```
+
+### Pattern: Frame Conditions
+
+```dafny
+method UpdateEmail(newEmail: string)
+  requires ValidEmail(newEmail)
+  // What changes
+  modifies this
+  // What stays the same
+  ensures name == old(name)
+  ensures age == old(age)
+  // What changes
+  ensures email == newEmail
+{
+  email := newEmail;
+}
+```
+
+### Pattern: Conditional Postcondition
+
+```dafny
+method FindUser(id: UserId) returns (user: User?)
+  // Natural language: "Returns user if exists, null otherwise"
+  ensures user != null ==> user.id == id
+  ensures user == null ==> id !in knownUsers
+```
+
+## Predicates
+
+Reusable boolean conditions.
+
+### Pattern: Validation Predicate
+
+```dafny
+// Natural language: "Email must contain @ and ."
+predicate ValidEmail(s: string) {
+  exists i, j :: 0 < i < j < |s| - 1 && s[i] == '@' && s[j] == '.'
+}
+
+// Natural language: "Password has minimum complexity"
+predicate StrongPassword(s: string) {
+  |s| >= 8 &&
+  exists c :: c in s && IsUpperCase(c) &&
+  exists c :: c in s && IsDigit(c)
+}
+```
+
+### Pattern: Collection Predicate
+
+```dafny
+// Natural language: "All elements satisfy condition"
+predicate AllPositive(xs: seq<int>) {
+  forall i :: 0 <= i < |xs| ==> xs[i] > 0
+}
+
+// Natural language: "No duplicates in sequence"
+predicate Unique<T>(xs: seq<T>) {
+  forall i, j :: 0 <= i < j < |xs| ==> xs[i] != xs[j]
+}
+```
+
+### Pattern: Relationship Predicate
+
+```dafny
+// Natural language: "Emails unique across users"
+predicate UniqueEmails(users: set<User>) {
+  forall u1, u2 :: u1 in users && u2 in users && u1 != u2
+    ==> u1.email != u2.email
+}
+```
+
+## Ghost State
+
+Specification-only state for verification.
+
+### Pattern: Audit Trail
+
+```dafny
+class SecureResource {
+  var data: string
+  ghost var accessLog: seq<AccessEvent>  // Spec only
+
+  method Access(user: User) returns (d: string)
+    ensures accessLog == old(accessLog) + [AccessEvent(user, d)]
+  {
+    d := data;
+    accessLog := accessLog + [AccessEvent(user, d)];
+  }
+}
+```
+
+## Verification Workflow
+
+### Running Verification
+
+```bash
+# Verify single file
+dafny verify specs/dafny/structure.dfy
+
+# Verify with timeout
+dafny verify --verification-time-limit:60 specs/dafny/structure.dfy
+
+# Verify all files
+dafny verify specs/dafny/*.dfy
+```
+
+### Interpreting Results
+
+| Result | Meaning | Action |
+|--------|---------|--------|
+| `Verified` | All proofs succeed | Specification is consistent |
+| `Error: precondition might not hold` | Caller doesn't guarantee requires | Fix call site or weaken precondition |
+| `Error: postcondition might not hold` | Implementation doesn't guarantee ensures | Fix implementation or weaken postcondition |
+| `Error: invariant might not hold` | State constraint violated | Fix method or strengthen precondition |
+| `Timeout` | Prover couldn't decide | Simplify or add hints |
+
+### Common Verification Hints
+
+```dafny
+// Help prover with loop invariants
+method Sum(xs: seq<int>) returns (s: int)
+  ensures s == SumSpec(xs)
+{
+  s := 0;
+  var i := 0;
+  while i < |xs|
+    invariant 0 <= i <= |xs|
+    invariant s == SumSpec(xs[..i])
+  {
+    s := s + xs[i];
+    i := i + 1;
+  }
+}
+```
+
+## Code Extraction
+
+Dafny compiles to multiple targets:
+
+```bash
+# To JavaScript (for TypeScript projects)
+dafny build --target:js specs/dafny/structure.dfy -o generated/structure.js
+
+# To other targets
+dafny build --target:cs  # C#
+dafny build --target:java  # Java
+dafny build --target:go  # Go
+dafny build --target:py  # Python
+```
+
+## TLA+ Correspondence
+
+Map Dafny constructs to TLA+ for cross-model consistency:
+
+| Dafny | TLA+ Equivalent |
+|-------|-----------------|
+| `class Foo { var x: int }` | `VARIABLE foo` with `foo.x ∈ Int` |
+| `invariant P` | `Invariant: P` |
+| `method M() requires P ensures Q` | `M == P /\ ... /\ Q'` |
+| `old(x)` | `x` (unprimed, current state) |
+| `ensures x == ...` | `x' = ...` (primed, next state) |
+
+## Additional Resources
+
+### Example Files
+- **`examples/account.dfy`** - Complete banking domain example with invariants, contracts, and transfers
+
+### External References
+- [Dafny Language Reference](https://dafny.org/dafny/DafnyRef/DafnyRef)
+- [Dafny Tutorial](https://dafny.org/latest/OnlineTutorial/guide)
