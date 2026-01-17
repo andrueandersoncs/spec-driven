@@ -20,13 +20,13 @@ If no argument, analyze entire project from current directory.
 
 Scan codebase for:
 - Type definitions (interfaces, types, classes)
-- Validation logic (Effect Schema, Zod, joi, io-ts, manual checks)
+- Validation logic (Effect Schema, or other libraries like Zod/joi/io-ts)
 - Business entities (models, domains)
 - API contracts (OpenAPI, route definitions)
 
 ```
 Glob: **/*.ts, **/*.tsx
-Grep: interface|type|class|z\.|schema
+Grep: interface|type|class|Schema\.|schema
 ```
 
 ### Identify Behavior
@@ -81,15 +81,11 @@ For each validation found:
 
 ```typescript
 // Found in code (Effect Schema):
-const schema = Schema.Struct({
-  amount: Schema.Number.pipe(Schema.positive()),
-  accountId: Schema.String.pipe(Schema.uuid())
-});
+import { Schema } from 'effect';
 
-// Or legacy Zod:
-const schema = z.object({
-  amount: z.number().positive(),
-  accountId: z.string().uuid()
+const WithdrawInput = Schema.Struct({
+  amount: Schema.Number.pipe(Schema.positive()),
+  accountId: Schema.String.pipe(Schema.minLength(1))
 });
 ```
 
