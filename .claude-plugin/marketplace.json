@@ -1,0 +1,22 @@
+{
+  "name": "spec-driven",
+  "version": "0.1.0",
+  "description": "Specification-driven development using formal verification (Dafny + TLA+) to generate correct software from user intent",
+  "author": {
+    "name": "Andrue Anderson"
+  },
+  "repository": "https://github.com/andrueandersoncs/spec-driven",
+  "license": "MIT",
+  "keywords": [
+    "formal-verification",
+    "dafny",
+    "tla+",
+    "specification",
+    "code-generation",
+    "requirements",
+    "correctness",
+    "contracts",
+    "effect",
+    "effect-ts"
+  ]
+}
