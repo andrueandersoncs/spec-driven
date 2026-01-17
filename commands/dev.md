@@ -46,7 +46,7 @@ Development Server Started
 
 Features:
   • Hot reload on file changes
-  • Zod validation on all endpoints
+  • Effect Schema validation on all endpoints
   • Assertion tracking enabled
 
 Press Ctrl+C to stop

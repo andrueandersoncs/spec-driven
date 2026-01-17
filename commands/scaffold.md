@@ -34,9 +34,9 @@ Analyze `specs/assertions.json` and `specs/dafny/*.dfy` to determine:
 
 **Dependencies** (from assertion patterns):
 - State machines detected → no extra deps (pure TypeScript)
-- Validation patterns → `zod`
+- Validation patterns → `effect` (Effect Schema)
 - Effect types mentioned → `effect`
-- API/HTTP patterns → `hono` (web service archetype)
+- API/HTTP patterns → `hono` + `effect` (web service archetype), or `@effect/platform` for Effect-native HTTP
 - CLI patterns → no extra deps (Bun has built-in)
 
 **Testing** (always included):
@@ -258,7 +258,7 @@ After generating, report:
 Project Scaffolded
 ==================
 Created:
-  ✓ package.json (dependencies: zod, hono)
+  ✓ package.json (dependencies: effect, hono)
   ✓ tsconfig.json (strict mode)
   ✓ bunfig.toml (test coverage enabled)
   ✓ src/index.ts (CLI entry point)

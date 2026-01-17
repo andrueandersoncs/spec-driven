@@ -20,7 +20,7 @@ If no argument, analyze entire project from current directory.
 
 Scan codebase for:
 - Type definitions (interfaces, types, classes)
-- Validation logic (Zod schemas, joi, io-ts, manual checks)
+- Validation logic (Effect Schema, Zod, joi, io-ts, manual checks)
 - Business entities (models, domains)
 - API contracts (OpenAPI, route definitions)
 
@@ -80,7 +80,13 @@ class Account {
 For each validation found:
 
 ```typescript
-// Found in code:
+// Found in code (Effect Schema):
+const schema = Schema.Struct({
+  amount: Schema.Number.pipe(Schema.positive()),
+  accountId: Schema.String.pipe(Schema.uuid())
+});
+
+// Or legacy Zod:
 const schema = z.object({
   amount: z.number().positive(),
   accountId: z.string().uuid()

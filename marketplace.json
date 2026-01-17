@@ -16,7 +16,9 @@
     "code-generation",
     "requirements",
     "correctness",
-    "contracts"
+    "contracts",
+    "effect",
+    "effect-ts"
   ],
   "categories": [
     "development",
@@ -27,7 +29,7 @@
     "Extract formal assertions from natural language requirements",
     "Build dual formal models (Dafny for structure, TLA+ for behavior)",
     "Verify specifications using dafny verify and TLC model checker",
-    "Generate TypeScript implementations with Zod validation",
+    "Generate TypeScript implementations with Effect Schema validation",
     "Reverse-engineer specifications from existing codebases",
     "Proactive agents for assertion generation and conflict resolution"
   ],

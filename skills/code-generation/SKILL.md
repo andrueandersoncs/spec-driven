@@ -1,12 +1,12 @@
 ---
 name: code-generation
-description: This skill should be used when generating code from verified specifications, extracting code from Dafny, creating TypeScript implementations from specs, generating Zod schemas, writing spec-guided code, or when the user asks "generate code", "extract from Dafny", "create implementation", "generate TypeScript", "write the code", "create Zod schemas from spec", "compile specs to code", "implement the domain logic", or "generate tests from contracts".
+description: This skill should be used when generating code from verified specifications, extracting code from Dafny, creating TypeScript implementations from specs, generating Effect Schemas, writing spec-guided code, or when the user asks "generate code", "extract from Dafny", "create implementation", "generate TypeScript", "write the code", "create Effect Schemas from spec", "compile specs to code", "implement the domain logic", or "generate tests from contracts".
 version: 0.1.0
 ---
 
 # Code Generation
 
-Generate correct implementations from verified Dafny and TLA+ specifications.
+Generate correct implementations from verified Dafny and TLA+ specifications using [Effect](https://effect.website/docs).
 
 ## Generation Modes
 
@@ -79,7 +79,7 @@ When extraction doesn't fit, generate code constrained by specs.
    - Preconditions → runtime validation
    - Postconditions → return value guarantees
    - Invariants → state consistency
-3. Generate Zod schemas from refinement types
+3. Generate Effect Schemas from refinement types
 4. Add traceability comments
 
 ### From Dafny Contract to TypeScript
@@ -95,49 +95,52 @@ method Withdraw(amount: int) returns (success: bool)
 
 **Generated TypeScript:**
 ```typescript
+import { Schema, Effect, Data } from 'effect';
+
 /**
  * @generated
  * @source-assertion A-047: "Can only withdraw if sufficient funds"
  * @source-spec specs/dafny/account.dfy:45-52
  * @verified 2024-01-15T10:30:00Z
  */
-const WithdrawInput = z.object({
-  amount: z.number().positive()
+const WithdrawInput = Schema.Struct({
+  amount: Schema.Number.pipe(Schema.positive())
 });
 
-type WithdrawResult =
-  | { success: true; newBalance: number }
-  | { success: false; error: 'INSUFFICIENT_FUNDS' };
+class InsufficientFunds extends Data.TaggedError('InsufficientFunds')<{
+  readonly balance: number;
+  readonly requested: number;
+}> {}
 
-function withdraw(
+const withdraw = (
   account: Account,
-  input: z.infer<typeof WithdrawInput>
-): WithdrawResult {
-  const { amount } = WithdrawInput.parse(input);
+  input: typeof WithdrawInput.Type
+): Effect.Effect<{ newBalance: number }, InsufficientFunds> =>
+  Effect.gen(function* () {
+    const { amount } = input;
 
-  // Precondition: amount <= balance
-  if (amount > account.balance) {
-    return { success: false, error: 'INSUFFICIENT_FUNDS' };
-  }
+    // Precondition: amount <= balance
+    if (amount > account.balance) {
+      return yield* Effect.fail(
+        new InsufficientFunds({ balance: account.balance, requested: amount })
+      );
+    }
 
-  // Postcondition: balance == old(balance) - amount
-  return {
-    success: true,
-    newBalance: account.balance - amount
-  };
-}
+    // Postcondition: balance == old(balance) - amount
+    return { newBalance: account.balance - amount };
+  });
 ```
 
-### Zod Schema Generation
+### Effect Schema Generation
 
-Map Dafny types to Zod:
+Map Dafny types to Effect Schema:
 
-| Dafny | Zod |
-|-------|-----|
-| `type Age = x: int \| x > 0` | `z.number().int().positive()` |
-| `type Price = x: real \| x >= 0` | `z.number().nonnegative()` |
-| `type NonEmpty = s: string \| \|s\| > 0` | `z.string().min(1)` |
-| `datatype Status = A \| B \| C` | `z.enum(['A', 'B', 'C'])` |
+| Dafny | Effect Schema |
+|-------|--------------|
+| `type Age = x: int \| x > 0` | `Schema.Number.pipe(Schema.int(), Schema.positive())` |
+| `type Price = x: real \| x >= 0` | `Schema.Number.pipe(Schema.nonNegative())` |
+| `type NonEmpty = s: string \| \|s\| > 0` | `Schema.String.pipe(Schema.minLength(1))` |
+| `datatype Status = A \| B \| C` | `Schema.Literal('A', 'B', 'C')` |
 
 ### Traceability Comments
 
@@ -160,16 +163,20 @@ Every generated artifact links to source:
 **From Dafny classes and refinement types:**
 
 ```typescript
+import { Schema } from 'effect';
+
 // From: class Account { var balance: int; ghost predicate Valid() { balance >= 0 } }
 interface Account {
   id: string;
   balance: number;
 }
 
-const AccountSchema = z.object({
-  id: z.string().uuid(),
-  balance: z.number().int().nonnegative()
+const AccountSchema = Schema.Struct({
+  id: Schema.String.pipe(Schema.uuid()),
+  balance: Schema.Number.pipe(Schema.int(), Schema.nonNegative())
 });
+
+type Account = typeof AccountSchema.Type;
 ```
 
 ### Validation Layer
@@ -177,16 +184,32 @@ const AccountSchema = z.object({
 **From Dafny preconditions:**
 
 ```typescript
+import { Schema, Effect, Data } from 'effect';
+
 // From: requires amount > 0; requires amount <= balance
-const validateWithdraw = (account: Account, amount: number) => {
-  if (amount <= 0) {
-    return { valid: false, error: 'INVALID_AMOUNT' };
-  }
-  if (amount > account.balance) {
-    return { valid: false, error: 'INSUFFICIENT_FUNDS' };
-  }
-  return { valid: true };
-};
+class InvalidAmount extends Data.TaggedError('InvalidAmount')<{
+  readonly amount: number;
+}> {}
+
+class InsufficientFunds extends Data.TaggedError('InsufficientFunds')<{
+  readonly balance: number;
+  readonly requested: number;
+}> {}
+
+const validateWithdraw = (
+  account: Account,
+  amount: number
+): Effect.Effect<void, InvalidAmount | InsufficientFunds> =>
+  Effect.gen(function* () {
+    if (amount <= 0) {
+      return yield* Effect.fail(new InvalidAmount({ amount }));
+    }
+    if (amount > account.balance) {
+      return yield* Effect.fail(
+        new InsufficientFunds({ balance: account.balance, requested: amount })
+      );
+    }
+  });
 ```
 
 ### Domain Logic Layer
@@ -195,12 +218,19 @@ const validateWithdraw = (account: Account, amount: number) => {
 
 ```typescript
 // Core business logic - may be extracted or generated
-function applyWithdraw(account: Account, amount: number): Account {
-  return {
-    ...account,
-    balance: account.balance - amount
-  };
-}
+const applyWithdraw = (account: Account, amount: number): Account => ({
+  ...account,
+  balance: account.balance - amount
+});
+
+const withdraw = (
+  account: Account,
+  amount: number
+): Effect.Effect<Account, InvalidAmount | InsufficientFunds> =>
+  Effect.gen(function* () {
+    yield* validateWithdraw(account, amount);
+    return applyWithdraw(account, amount);
+  });
 ```
 
 ### State Machine Layer
@@ -208,8 +238,22 @@ function applyWithdraw(account: Account, amount: number): Account {
 **From TLA+ actions:**
 
 ```typescript
-// From TLA+ state machine
-type OrderState = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+import { Schema } from 'effect';
+
+// From TLA+: VARIABLES orderState; Next == Confirm \/ Ship \/ Cancel
+// src/state/order.ts
+/**
+ * @generated
+ * @source-spec specs/tla/behavior.tla:20-45
+ */
+const OrderState = Schema.Literal(
+  'pending',
+  'confirmed',
+  'shipped',
+  'delivered',
+  'cancelled'
+);
+type OrderState = typeof OrderState.Type;
 
 const orderTransitions: Record<OrderState, OrderState[]> = {
   pending: ['confirmed', 'cancelled'],
@@ -222,6 +266,14 @@ const orderTransitions: Record<OrderState, OrderState[]> = {
 function canTransition(from: OrderState, to: OrderState): boolean {
   return orderTransitions[from].includes(to);
 }
+
+function transition<T extends { state: OrderState }>(
+  entity: T,
+  to: OrderState
+): T | null {
+  if (!canTransition(entity.state, to)) return null;
+  return { ...entity, state: to };
+}
 ```
 
 ## Test Generation
@@ -232,22 +284,23 @@ Generate tests from specs:
 
 ```typescript
 import { fc } from '@fast-check/vitest';
+import { Effect } from 'effect';
 
 // From Dafny postcondition
-test.prop([fc.integer({ min: 1, max: 1000 })])('withdraw decreases balance', (amount) => {
-  const account = { balance: 1000 };
-  const result = withdraw(account, amount);
-  if (result.success) {
-    expect(result.newBalance).toBe(account.balance - amount);
+test.prop([fc.integer({ min: 1, max: 1000 })])('withdraw decreases balance', async (amount) => {
+  const account = { id: '1', balance: 1000 };
+  const result = await Effect.runPromiseExit(withdraw(account, amount));
+  if (result._tag === 'Success') {
+    expect(result.value.balance).toBe(account.balance - amount);
   }
 });
 
 // From Dafny invariant
-test.prop([fc.integer()])('balance never negative', (amount) => {
-  const account = { balance: 100 };
-  const result = withdraw(account, amount);
-  if (result.success) {
-    expect(result.newBalance).toBeGreaterThanOrEqual(0);
+test.prop([fc.integer()])('balance never negative', async (amount) => {
+  const account = { id: '1', balance: 100 };
+  const result = await Effect.runPromiseExit(withdraw(account, amount));
+  if (result._tag === 'Success') {
+    expect(result.value.balance).toBeGreaterThanOrEqual(0);
   }
 });
 ```
@@ -294,7 +347,7 @@ project/
 ├── generated/
 │   ├── structure.js      # Dafny extraction
 │   ├── structure.d.ts    # Type declarations
-│   └── schemas.ts        # Zod schemas
+│   └── schemas.ts        # Effect Schemas
 └── src/
     ├── services/         # Business logic (uses generated)
     └── api/              # API layer (uses generated)
@@ -305,14 +358,21 @@ project/
 ### Example Files
 - **`examples/account-generated.ts`** - Complete generated TypeScript from Dafny/TLA+ specs
 
-### Zod Mapping Quick Reference
+### Effect Schema Mapping Quick Reference
 
-| Dafny | Zod |
-|-------|-----|
-| `type X = x: int \| x > 0` | `z.number().int().positive()` |
-| `type X = x: int \| x >= 0` | `z.number().int().nonnegative()` |
-| `type X = x: int \| a <= x <= b` | `z.number().int().min(a).max(b)` |
-| `type X = s: string \| \|s\| > 0` | `z.string().min(1)` |
-| `type X = s: string \| \|s\| <= n` | `z.string().max(n)` |
-| `datatype X = A \| B \| C` | `z.enum(['A', 'B', 'C'])` |
-| `class C { var x: int }` | `z.object({ x: z.number().int() })` |
+| Dafny | Effect Schema |
+|-------|--------------|
+| `type X = x: int \| x > 0` | `Schema.Number.pipe(Schema.int(), Schema.positive())` |
+| `type X = x: int \| x >= 0` | `Schema.Number.pipe(Schema.int(), Schema.nonNegative())` |
+| `type X = x: int \| a <= x <= b` | `Schema.Number.pipe(Schema.int(), Schema.between(a, b))` |
+| `type X = s: string \| \|s\| > 0` | `Schema.String.pipe(Schema.minLength(1))` |
+| `type X = s: string \| \|s\| <= n` | `Schema.String.pipe(Schema.maxLength(n))` |
+| `datatype X = A \| B \| C` | `Schema.Literal('A', 'B', 'C')` |
+| `class C { var x: int }` | `Schema.Struct({ x: Schema.Number.pipe(Schema.int()) })` |
+
+### External References
+
+- **Effect Documentation**: https://effect.website/docs
+- **Effect Schema**: https://effect.website/docs/schema/introduction
+- **Effect Schema Filters**: https://effect.website/docs/schema/filters
+- **Effect Error Handling**: https://effect.website/docs/error-management/expected-errors

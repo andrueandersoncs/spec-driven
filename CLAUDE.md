@@ -65,7 +65,7 @@ The plugin uses two co-evolving formal models:
 - `code-generation` - Code generation from specs
 
 **Execution Skills:**
-- `runtime-patterns` - TypeScript runtime validation (Zod, branded types, Effect)
+- `runtime-patterns` - TypeScript runtime validation (Effect Schema, branded types, Effect)
 - `deployment-patterns` - Docker deployment patterns for Bun applications
 
 ## Core Workflows
@@ -92,7 +92,7 @@ your-project/
 │   ├── tla/behavior.cfg        # TLC configuration
 │   └── assertions.json         # Assertion manifest (single source of truth)
 ├── src/                        # Generated/implemented code
-│   ├── types/                  # Zod schemas from Dafny types
+│   ├── types/                  # Effect Schemas from Dafny types
 │   ├── validation/             # Input validators from preconditions
 │   ├── domain/                 # Business logic from specs
 │   ├── state/                  # State machines from TLA+
@@ -116,7 +116,7 @@ your-project/
 ## Code Generation Modes
 
 1. **Verified Extraction** - Dafny compiles to JavaScript, TypeScript wraps with type declarations
-2. **Spec-Guided Generation** - LLM generates TypeScript constrained by specs with Zod schemas
+2. **Spec-Guided Generation** - LLM generates TypeScript constrained by specs with Effect Schema
 3. **Contract-First** - Generate interfaces with TODO implementations
 
 ## Traceability Pattern
@@ -180,4 +180,8 @@ The plugin includes hooks that guide the workflow:
 - **TLA+ Examples**: https://github.com/tlaplus/Examples
 - **Learn TLA+**: https://learntla.com/
 - **Bun Documentation**: https://bun.sh/docs
-- **Zod Documentation**: https://zod.dev
+- **Effect Documentation**: https://effect.website/docs
+- **Effect Schema**: https://effect.website/docs/schema/introduction
+- **Effect GitHub**: https://github.com/Effect-TS/effect
+- **Effect Examples**: https://github.com/Effect-TS/examples
+- **Effect LSP/DevTools**: https://effect.website/docs/getting-started/devtools/

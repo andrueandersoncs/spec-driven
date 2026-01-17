@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Check if this write created or updated files in src/ directory from code generation (/generate command or code-generator agent). If so, and if package.json does NOT exist, suggest running /scaffold to make the code runnable. If package.json exists but dependencies are missing (e.g., zod is used but not in package.json), suggest running 'bun install' or /scaffold to update.",
+            "prompt": "Check if this write created or updated files in src/ directory from code generation (/generate command or code-generator agent). If so, and if package.json does NOT exist, suggest running /scaffold to make the code runnable. If package.json exists but dependencies are missing (e.g., effect is used but not in package.json), suggest running 'bun install' or /scaffold to update.",
             "timeout": 15
           }
         ]

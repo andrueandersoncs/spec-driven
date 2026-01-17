@@ -1,20 +1,20 @@
 ---
-description: This skill provides TypeScript runtime validation patterns for spec-driven development. Use when generating runtime validators from Dafny specs, implementing Zod schemas from refinement types, creating branded types, using Effect for error handling, or implementing runtime contract checking. Triggers on "runtime validation", "Zod schema from spec", "branded types", "Effect error handling", "contract checking".
+description: This skill provides TypeScript runtime validation patterns for spec-driven development. Use when generating runtime validators from Dafny specs, implementing Effect Schemas from refinement types, creating branded types, using Effect for error handling, or implementing runtime contract checking. Triggers on "runtime validation", "Effect Schema from spec", "branded types", "Effect error handling", "contract checking".
 ---
 
 # Runtime Validation Patterns
 
-Implement runtime validation in TypeScript that mirrors Dafny formal specifications.
+Implement runtime validation in TypeScript that mirrors Dafny formal specifications using [Effect](https://effect.website/docs).
 
 ## Core Principle
 
-Dafny provides compile-time verification. TypeScript needs runtime checks at system boundaries (API inputs, external data, user input). These patterns bridge the gap.
+Dafny provides compile-time verification. TypeScript needs runtime checks at system boundaries (API inputs, external data, user input). These patterns bridge the gap using Effect Schema for validation and Effect for error handling.
 
-## Zod Schemas from Dafny Types
+## Effect Schemas from Dafny Types
 
-### Refinement Types → Zod
+### Refinement Types → Effect Schema
 
-Dafny refinement types become Zod schemas with constraints:
+Dafny refinement types become Effect Schemas with constraints:
 
 ```dafny
 // Dafny
@@ -24,17 +24,28 @@ type Percentage = x: real | 0.0 <= x <= 100.0
 ```
 
 ```typescript
-// TypeScript + Zod
-import { z } from 'zod';
+// TypeScript + Effect Schema
+import { Schema } from 'effect';
 
-export const AgeSchema = z.number().int().min(1).max(149);
-export const NonEmptyStringSchema = z.string().min(1);
-export const PercentageSchema = z.number().min(0).max(100);
+export const AgeSchema = Schema.Number.pipe(
+  Schema.int(),
+  Schema.greaterThan(0),
+  Schema.lessThan(150)
+);
+
+export const NonEmptyStringSchema = Schema.String.pipe(
+  Schema.minLength(1)
+);
+
+export const PercentageSchema = Schema.Number.pipe(
+  Schema.greaterThanOrEqualTo(0),
+  Schema.lessThanOrEqualTo(100)
+);
 ```
 
-### Class Invariants → Object Schemas
+### Class Invariants → Struct Schemas with Filters
 
-Dafny class invariants become Zod object refinements:
+Dafny class invariants become Effect Schema structs with filters:
 
 ```dafny
 // Dafny
@@ -48,36 +59,51 @@ class Account {
 ```
 
 ```typescript
-// TypeScript + Zod
-export const AccountSchema = z.object({
-  balance: z.number().int(),
-  overdraftLimit: z.number().int().nonnegative()
-}).refine(
-  data => data.balance >= -data.overdraftLimit,
-  { message: "Balance cannot exceed overdraft limit" }
+// TypeScript + Effect Schema
+import { Schema } from 'effect';
+
+export const AccountSchema = Schema.Struct({
+  balance: Schema.Number.pipe(Schema.int()),
+  overdraftLimit: Schema.Number.pipe(Schema.int(), Schema.nonNegative())
+}).pipe(
+  Schema.filter((data) =>
+    data.balance >= -data.overdraftLimit
+      ? true
+      : 'Balance cannot exceed overdraft limit'
+  )
 );
 ```
 
 ## Branded Types for Refinement Types
 
-Use branded types when you need compile-time distinction:
+Use Effect Schema branded types for compile-time distinction:
 
 ```typescript
-// Branded type pattern
-type Brand<T, B> = T & { readonly __brand: B };
+import { Schema, Brand } from 'effect';
 
-type PositiveInt = Brand<number, 'PositiveInt'>;
-type NonEmptyString = Brand<string, 'NonEmptyString'>;
-type AccountId = Brand<string, 'AccountId'>;
+// Define branded types using Effect Schema
+const PositiveInt = Schema.Number.pipe(
+  Schema.int(),
+  Schema.positive(),
+  Schema.brand('PositiveInt')
+);
+type PositiveInt = Schema.Schema.Type<typeof PositiveInt>;
 
-// Smart constructors
-function positiveInt(n: number): PositiveInt | null {
-  return n > 0 && Number.isInteger(n) ? n as PositiveInt : null;
-}
+const NonEmptyString = Schema.String.pipe(
+  Schema.minLength(1),
+  Schema.brand('NonEmptyString')
+);
+type NonEmptyString = Schema.Schema.Type<typeof NonEmptyString>;
 
-function nonEmptyString(s: string): NonEmptyString | null {
-  return s.length > 0 ? s as NonEmptyString : null;
-}
+const AccountId = Schema.String.pipe(
+  Schema.minLength(1),
+  Schema.brand('AccountId')
+);
+type AccountId = Schema.Schema.Type<typeof AccountId>;
+
+// Parse to create branded values
+const accountId = Schema.decodeUnknownSync(AccountId)('acc-123');
+const amount = Schema.decodeUnknownSync(PositiveInt)(100);
 
 // Usage - compiler prevents mixing branded types
 function withdraw(accountId: AccountId, amount: PositiveInt): void {
@@ -85,97 +111,91 @@ function withdraw(accountId: AccountId, amount: PositiveInt): void {
 }
 ```
 
-### Zod + Branded Types Combined
+### Combining Multiple Brands
 
 ```typescript
-import { z } from 'zod';
+import { Schema } from 'effect';
 
-// Define branded type
-type PositiveInt = number & { readonly __brand: 'PositiveInt' };
+// Combine multiple refinements using extend
+const Integer = Schema.Int.pipe(Schema.brand('Int'));
+const Positive = Schema.Positive.pipe(Schema.brand('Positive'));
 
-// Zod schema that produces branded type
-const PositiveIntSchema = z.number().int().positive().transform(
-  (n): PositiveInt => n as PositiveInt
-);
+// Combined branded type
+const PositiveInteger = Schema.asSchema(Schema.extend(Positive, Integer));
+type PositiveInteger = Schema.Schema.Type<typeof PositiveInteger>;
 
-// Parse returns branded type
-const amount = PositiveIntSchema.parse(100); // PositiveInt
+// Parse returns combined branded type
+const amount = Schema.decodeUnknownSync(PositiveInteger)(100);
+// Type: number & Brand<"Positive"> & Brand<"Int">
 ```
 
 ## Effect for Structured Errors
 
 Use Effect for operations that can fail in multiple ways:
 
-### Discriminated Union Errors
+### Error Types as Tagged Classes
 
 ```typescript
+import { Effect, Data } from 'effect';
+
 // Error types matching Dafny precondition violations
-type WithdrawError =
-  | { _tag: 'InvalidAmount'; amount: number }
-  | { _tag: 'InsufficientFunds'; balance: number; requested: number }
-  | { _tag: 'AccountNotFound'; accountId: string };
+class InvalidAmount extends Data.TaggedError('InvalidAmount')<{
+  readonly amount: number;
+}> {}
 
-// Result type
-type WithdrawResult<T> =
-  | { success: true; value: T }
-  | { success: false; error: WithdrawError };
+class InsufficientFunds extends Data.TaggedError('InsufficientFunds')<{
+  readonly balance: number;
+  readonly requested: number;
+}> {}
 
-function withdraw(
-  account: Account,
-  amount: number
-): WithdrawResult<Account> {
-  if (amount <= 0) {
-    return { success: false, error: { _tag: 'InvalidAmount', amount } };
-  }
-  if (amount > account.balance) {
-    return {
-      success: false,
-      error: {
-        _tag: 'InsufficientFunds',
-        balance: account.balance,
-        requested: amount
-      }
-    };
-  }
-  return {
-    success: true,
-    value: { ...account, balance: account.balance - amount }
-  };
-}
+class AccountNotFound extends Data.TaggedError('AccountNotFound')<{
+  readonly accountId: string;
+}> {}
+
+type WithdrawError = InvalidAmount | InsufficientFunds | AccountNotFound;
 ```
 
-### With Effect Library
+### Effect-Based Domain Logic
 
 ```typescript
-import { Effect, Either } from 'effect';
-
-class InvalidAmount {
-  readonly _tag = 'InvalidAmount';
-  constructor(readonly amount: number) {}
-}
-
-class InsufficientFunds {
-  readonly _tag = 'InsufficientFunds';
-  constructor(readonly balance: number, readonly requested: number) {}
-}
-
-type WithdrawError = InvalidAmount | InsufficientFunds;
+import { Effect } from 'effect';
 
 const withdraw = (
   account: Account,
   amount: number
 ): Effect.Effect<Account, WithdrawError> =>
   Effect.gen(function* () {
+    // Precondition: amount > 0
     if (amount <= 0) {
-      return yield* Effect.fail(new InvalidAmount(amount));
+      return yield* Effect.fail(new InvalidAmount({ amount }));
     }
+
+    // Precondition: amount <= balance
     if (amount > account.balance) {
       return yield* Effect.fail(
-        new InsufficientFunds(account.balance, amount)
+        new InsufficientFunds({
+          balance: account.balance,
+          requested: amount
+        })
       );
     }
+
+    // Postcondition: balance == old(balance) - amount
     return { ...account, balance: account.balance - amount };
   });
+
+// Usage with comprehensive error handling
+const program = Effect.gen(function* () {
+  const account = { id: 'acc-1', balance: 100 };
+  const result = yield* withdraw(account, 50);
+  return result;
+}).pipe(
+  Effect.catchTags({
+    InvalidAmount: (e) => Effect.succeed({ error: `Invalid amount: ${e.amount}` }),
+    InsufficientFunds: (e) => Effect.succeed({ error: `Insufficient: ${e.balance} < ${e.requested}` }),
+    AccountNotFound: (e) => Effect.succeed({ error: `Not found: ${e.accountId}` })
+  })
+);
 ```
 
 ## Runtime Contract Checking
@@ -310,17 +330,31 @@ order.transition('pending');   // false - logged error
 Apply runtime validation only at system boundaries:
 
 ```typescript
+import { Schema } from 'effect';
+
+// Define input schema
+const WithdrawInputSchema = Schema.Struct({
+  accountId: Schema.String.pipe(Schema.minLength(1)),
+  amount: Schema.Number.pipe(Schema.positive())
+});
+
 // API boundary - validate incoming data
 app.post('/withdraw', async (c) => {
-  // Parse and validate at boundary
-  const input = WithdrawInputSchema.safeParse(await c.req.json());
+  // Parse and validate at boundary using Effect Schema
+  const parseResult = Schema.decodeUnknownEither(WithdrawInputSchema)(
+    await c.req.json()
+  );
 
-  if (!input.success) {
-    return c.json({ error: input.error.format() }, 400);
+  if (parseResult._tag === 'Left') {
+    return c.json({ error: parseResult.left.message }, 400);
   }
 
+  const input = parseResult.right;
+
   // Inside boundary - types are trusted
-  const result = withdraw(account, input.data.amount);
+  const result = await Effect.runPromise(
+    withdraw(account, input.amount)
+  );
 
   return c.json(result);
 });
@@ -332,9 +366,62 @@ function calculateInterest(account: Account): number {
 }
 ```
 
+### Effect Platform HTTP Integration
+
+For full Effect-based HTTP services, use `@effect/platform`:
+
+```typescript
+import { HttpApi, HttpApiEndpoint, HttpApiGroup } from '@effect/platform';
+import { Schema } from 'effect';
+
+// Define API schema with Effect
+const WithdrawRequest = Schema.Struct({
+  accountId: Schema.String,
+  amount: Schema.Number.pipe(Schema.positive())
+});
+
+const WithdrawResponse = Schema.Struct({
+  newBalance: Schema.Number
+});
+
+// Define API endpoint
+const withdrawEndpoint = HttpApiEndpoint.post('withdraw', '/withdraw')
+  .setPayload(WithdrawRequest)
+  .addSuccess(WithdrawResponse);
+
+// Wire up to Effect handler
+const withdrawHandler = HttpApiEndpoint.handle(withdrawEndpoint, ({ payload }) =>
+  Effect.gen(function* () {
+    const account = yield* getAccount(payload.accountId);
+    const updated = yield* withdraw(account, payload.amount);
+    return { newBalance: updated.balance };
+  })
+);
+```
+
+## Effect Schema Quick Reference
+
+| Dafny | Effect Schema |
+|-------|--------------|
+| `type X = x: int \| x > 0` | `Schema.Number.pipe(Schema.int(), Schema.positive())` |
+| `type X = x: int \| x >= 0` | `Schema.Number.pipe(Schema.int(), Schema.nonNegative())` |
+| `type X = x: int \| a <= x <= b` | `Schema.Number.pipe(Schema.int(), Schema.between(a, b))` |
+| `type X = s: string \| \|s\| > 0` | `Schema.String.pipe(Schema.minLength(1))` |
+| `type X = s: string \| \|s\| <= n` | `Schema.String.pipe(Schema.maxLength(n))` |
+| `datatype X = A \| B \| C` | `Schema.Literal('A', 'B', 'C')` |
+| `class C { var x: int }` | `Schema.Struct({ x: Schema.Number.pipe(Schema.int()) })` |
+
+## External References
+
+- **Effect Documentation**: https://effect.website/docs
+- **Effect Schema**: https://effect.website/docs/schema/introduction
+- **Effect Schema Filters**: https://effect.website/docs/schema/filters
+- **Effect Schema Branded Types**: https://effect.website/docs/schema/advanced-usage#branded-types
+- **Effect Platform HTTP**: https://effect.website/docs/platform/http-server
+
 ## Examples
 
 See `examples/` for complete implementations:
 - `validated-account.ts` - Full account with all patterns
 - `order-state-machine.ts` - TLA+-derived state machine
-- `api-validation.ts` - Hono API with Zod validation
+- `api-validation.ts` - HTTP API with Effect Schema validation

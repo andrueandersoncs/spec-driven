@@ -7,7 +7,7 @@ model: sonnet
 
 # Code Generation
 
-Generate implementation code from verified Dafny and TLA+ specifications.
+Generate implementation code from verified Dafny and TLA+ specifications using [Effect](https://effect.website/docs).
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ Determine generation mode based on target:
 ## Layer Selection
 
 If $ARGUMENTS specifies a layer, generate only that layer:
-- `types` - Type definitions and Zod schemas
+- `types` - Type definitions and Effect Schemas
 - `validation` - Input validators from preconditions
 - `domain` - Core business logic
 - `state` - State machines from TLA+
@@ -74,10 +74,14 @@ Generate to `src/types/`:
 ```typescript
 // From Dafny: type Age = x: int | 0 < x < 150
 // src/types/age.ts
-import { z } from 'zod';
+import { Schema } from 'effect';
 
-export const AgeSchema = z.number().int().min(1).max(149);
-export type Age = z.infer<typeof AgeSchema>;
+export const AgeSchema = Schema.Number.pipe(
+  Schema.int(),
+  Schema.greaterThan(0),
+  Schema.lessThan(150)
+);
+export type Age = typeof AgeSchema.Type;
 ```
 
 Add traceability comments linking to source assertion.
@@ -90,20 +94,36 @@ Generate to `src/validation/`:
 ```typescript
 // From Dafny: requires amount > 0; requires amount <= balance
 // src/validation/withdraw.ts
+import { Effect, Data } from 'effect';
+
 /**
  * @generated
  * @source-assertion A-052
  * @source-spec specs/dafny/account.dfy:45-48
  */
-export const validateWithdraw = (account: Account, amount: number) => {
-  if (amount <= 0) {
-    return { valid: false, error: 'INVALID_AMOUNT' as const };
-  }
-  if (amount > account.balance) {
-    return { valid: false, error: 'INSUFFICIENT_FUNDS' as const };
-  }
-  return { valid: true } as const;
-};
+class InvalidAmount extends Data.TaggedError('InvalidAmount')<{
+  readonly amount: number;
+}> {}
+
+class InsufficientFunds extends Data.TaggedError('InsufficientFunds')<{
+  readonly balance: number;
+  readonly requested: number;
+}> {}
+
+export const validateWithdraw = (
+  account: Account,
+  amount: number
+): Effect.Effect<void, InvalidAmount | InsufficientFunds> =>
+  Effect.gen(function* () {
+    if (amount <= 0) {
+      return yield* Effect.fail(new InvalidAmount({ amount }));
+    }
+    if (amount > account.balance) {
+      return yield* Effect.fail(
+        new InsufficientFunds({ balance: account.balance, requested: amount })
+      );
+    }
+  });
 ```
 
 ### Domain Logic Layer
@@ -114,21 +134,24 @@ Generate to `src/domain/`:
 ```typescript
 // From Dafny: ensures balance == old(balance) - amount
 // src/domain/account.ts
+import { Effect } from 'effect';
+
 /**
  * @generated
  * @source-assertion A-053
  * @source-spec specs/dafny/account.dfy:50-55
  */
-export function withdraw(account: Account, amount: number): WithdrawResult {
-  const validation = validateWithdraw(account, amount);
-  if (!validation.valid) {
-    return { success: false, error: validation.error };
-  }
-  return {
-    success: true,
-    account: { ...account, balance: account.balance - amount }
-  };
-}
+export const withdraw = (
+  account: Account,
+  amount: number
+): Effect.Effect<Account, InvalidAmount | InsufficientFunds> =>
+  Effect.gen(function* () {
+    yield* validateWithdraw(account, amount);
+    return {
+      ...account,
+      balance: account.balance - amount
+    };
+  });
 ```
 
 ### State Machine Layer
@@ -139,11 +162,20 @@ Generate to `src/state/`:
 ```typescript
 // From TLA+: VARIABLES orderState; Next == Confirm \/ Ship \/ Cancel
 // src/state/order.ts
+import { Schema } from 'effect';
+
 /**
  * @generated
  * @source-spec specs/tla/behavior.tla:20-45
  */
-export type OrderState = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+const OrderState = Schema.Literal(
+  'pending',
+  'confirmed',
+  'shipped',
+  'delivered',
+  'cancelled'
+);
+type OrderState = typeof OrderState.Type;
 
 export const orderTransitions: Record<OrderState, OrderState[]> = {
   pending: ['confirmed', 'cancelled'],
@@ -171,21 +203,49 @@ Generate to `src/api/`:
 ```typescript
 // src/api/account.ts
 import { Hono } from 'hono';
-import { zValidator } from '@hono/zod-validator';
+import { Schema, Effect, Either } from 'effect';
 import { withdraw } from '../domain/account';
 import { WithdrawInputSchema } from '../types/account';
 
 export const accountRoutes = new Hono()
-  .post('/withdraw', zValidator('json', WithdrawInputSchema), async (c) => {
-    const input = c.req.valid('json');
-    const account = await getAccount(input.accountId);
-    const result = withdraw(account, input.amount);
-    if (!result.success) {
-      return c.json({ error: result.error }, 400);
+  .post('/withdraw', async (c) => {
+    const json = await c.req.json();
+    const parseResult = Schema.decodeUnknownEither(WithdrawInputSchema)(json);
+
+    if (Either.isLeft(parseResult)) {
+      return c.json({ error: parseResult.left.message }, 400);
     }
-    await saveAccount(result.account);
-    return c.json({ balance: result.account.balance });
+
+    const input = parseResult.right;
+    const account = await getAccount(input.accountId);
+    const result = await Effect.runPromiseExit(withdraw(account, input.amount));
+
+    if (result._tag === 'Failure') {
+      return c.json({ error: 'Withdrawal failed' }, 400);
+    }
+
+    await saveAccount(result.value);
+    return c.json({ balance: result.value.balance });
   });
+```
+
+For full Effect-native HTTP, use `@effect/platform`:
+
+```typescript
+import { HttpApiEndpoint, HttpApiGroup } from '@effect/platform';
+import { Schema, Effect } from 'effect';
+
+const WithdrawEndpoint = HttpApiEndpoint.post('withdraw', '/withdraw')
+  .setPayload(WithdrawInputSchema)
+  .addSuccess(Schema.Struct({ balance: Schema.Number }));
+
+const withdrawHandler = HttpApiEndpoint.handle(WithdrawEndpoint, ({ payload }) =>
+  Effect.gen(function* () {
+    const account = yield* getAccount(payload.accountId);
+    const updated = yield* withdraw(account, payload.amount);
+    return { balance: updated.balance };
+  })
+);
 ```
 
 ### Test Generation Layer
@@ -198,23 +258,24 @@ Generate to `tests/`:
 // tests/account.test.ts
 import { test, expect } from 'vitest';
 import { fc } from '@fast-check/vitest';
+import { Effect } from 'effect';
 import { withdraw } from '../src/domain/account';
 
 // Property from Dafny postcondition
-test.prop([fc.integer({ min: 1, max: 1000 })])('withdraw decreases balance correctly', (amount) => {
+test.prop([fc.integer({ min: 1, max: 1000 })])('withdraw decreases balance correctly', async (amount) => {
   const account = { id: '1', balance: 1000 };
-  const result = withdraw(account, amount);
-  if (result.success) {
-    expect(result.account.balance).toBe(1000 - amount);
+  const result = await Effect.runPromiseExit(withdraw(account, amount));
+  if (result._tag === 'Success') {
+    expect(result.value.balance).toBe(1000 - amount);
   }
 });
 
 // Invariant from Dafny
-test.prop([fc.integer()])('balance never negative after withdraw', (amount) => {
+test.prop([fc.integer()])('balance never negative after withdraw', async (amount) => {
   const account = { id: '1', balance: 100 };
-  const result = withdraw(account, amount);
-  if (result.success) {
-    expect(result.account.balance).toBeGreaterThanOrEqual(0);
+  const result = await Effect.runPromiseExit(withdraw(account, amount));
+  if (result._tag === 'Success') {
+    expect(result.value.balance).toBeGreaterThanOrEqual(0);
   }
 });
 ```
@@ -225,16 +286,21 @@ Generate interfaces only, with TODO markers for implementation.
 
 ```typescript
 // src/domain/account.ts
+import { Effect } from 'effect';
+
 /**
  * @contract
  * @requires amount > 0
  * @requires amount <= account.balance
  * @ensures result.success implies new balance = old balance - amount
  */
-export function withdraw(account: Account, amount: number): WithdrawResult {
+export const withdraw = (
+  account: Account,
+  amount: number
+): Effect.Effect<Account, WithdrawError> => {
   // TODO: Implement according to contract above
-  throw new Error('Not implemented');
-}
+  return Effect.fail(new Error('Not implemented') as any);
+};
 ```
 
 ## Output Structure
@@ -243,7 +309,7 @@ Create/update project structure:
 
 ```
 src/
-├── types/           # Zod schemas and types
+├── types/           # Effect Schemas and types
 ├── validation/      # Input validators
 ├── domain/          # Business logic
 ├── state/           # State machines

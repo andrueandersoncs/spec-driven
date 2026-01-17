@@ -1,95 +1,101 @@
 /**
  * @generated example
  * Complete example of runtime validation patterns for an Account entity
- * Demonstrates: Zod schemas, branded types, Effect errors, contract checking
+ * Demonstrates: Effect Schema, branded types, Effect errors, contract checking
  */
 
-import { z } from 'zod';
+import { Schema, Effect, Data, Either, Brand } from 'effect';
 
 // =============================================================================
-// BRANDED TYPES (compile-time safety)
+// BRANDED TYPES (compile-time safety with Effect Schema)
 // =============================================================================
 
-type Brand<T, B> = T & { readonly __brand: B };
+const AccountId = Schema.String.pipe(
+  Schema.minLength(1),
+  Schema.brand('AccountId')
+);
+export type AccountId = typeof AccountId.Type;
 
-export type AccountId = Brand<string, 'AccountId'>;
-export type PositiveAmount = Brand<number, 'PositiveAmount'>;
-export type NonNegativeBalance = Brand<number, 'NonNegativeBalance'>;
+const PositiveAmount = Schema.Number.pipe(
+  Schema.positive(),
+  Schema.finite(),
+  Schema.brand('PositiveAmount')
+);
+export type PositiveAmount = typeof PositiveAmount.Type;
 
-// Smart constructors
-export function accountId(s: string): AccountId | null {
-  return s.length > 0 ? (s as AccountId) : null;
-}
+const NonNegativeBalance = Schema.Number.pipe(
+  Schema.nonNegative(),
+  Schema.finite(),
+  Schema.brand('NonNegativeBalance')
+);
+export type NonNegativeBalance = typeof NonNegativeBalance.Type;
 
-export function positiveAmount(n: number): PositiveAmount | null {
-  return n > 0 && Number.isFinite(n) ? (n as PositiveAmount) : null;
-}
+// Smart constructors using Effect Schema
+export const accountId = (s: string): AccountId | null => {
+  const result = Schema.decodeUnknownEither(AccountId)(s);
+  return Either.isRight(result) ? result.right : null;
+};
 
-export function nonNegativeBalance(n: number): NonNegativeBalance | null {
-  return n >= 0 && Number.isFinite(n) ? (n as NonNegativeBalance) : null;
-}
+export const positiveAmount = (n: number): PositiveAmount | null => {
+  const result = Schema.decodeUnknownEither(PositiveAmount)(n);
+  return Either.isRight(result) ? result.right : null;
+};
+
+export const nonNegativeBalance = (n: number): NonNegativeBalance | null => {
+  const result = Schema.decodeUnknownEither(NonNegativeBalance)(n);
+  return Either.isRight(result) ? result.right : null;
+};
 
 // =============================================================================
-// ZOD SCHEMAS (runtime validation at boundaries)
+// EFFECT SCHEMAS (runtime validation at boundaries)
 // =============================================================================
 
 /**
  * @source-assertion A-001: "Account balance never negative"
  * @source-spec specs/dafny/structure.dfy:5-8
  */
-export const AccountSchema = z.object({
-  id: z.string().min(1).transform((s): AccountId => s as AccountId),
-  balance: z.number().nonnegative().transform((n): NonNegativeBalance => n as NonNegativeBalance),
-  name: z.string().min(1).max(100),
-  createdAt: z.date()
+export const AccountSchema = Schema.Struct({
+  id: AccountId,
+  balance: NonNegativeBalance,
+  name: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(100)),
+  createdAt: Schema.Date
 });
 
-export type Account = z.infer<typeof AccountSchema>;
+export type Account = typeof AccountSchema.Type;
 
 /**
  * @source-assertion A-002: "Withdraw amount must be positive"
  * @source-spec specs/dafny/structure.dfy:15-17
  */
-export const WithdrawInputSchema = z.object({
-  accountId: z.string().min(1),
-  amount: z.number().positive()
+export const WithdrawInputSchema = Schema.Struct({
+  accountId: Schema.String.pipe(Schema.minLength(1)),
+  amount: Schema.Number.pipe(Schema.positive())
 });
 
-export type WithdrawInput = z.infer<typeof WithdrawInputSchema>;
+export type WithdrawInput = typeof WithdrawInputSchema.Type;
 
 // =============================================================================
-// DISCRIMINATED UNION ERRORS (structured error handling)
+// TAGGED ERROR TYPES (structured error handling with Effect)
 // =============================================================================
 
-export type WithdrawError =
-  | { readonly _tag: 'AccountNotFound'; readonly accountId: string }
-  | { readonly _tag: 'InvalidAmount'; readonly amount: number; readonly reason: string }
-  | { readonly _tag: 'InsufficientFunds'; readonly balance: number; readonly requested: number };
+export class AccountNotFound extends Data.TaggedError('AccountNotFound')<{
+  readonly accountId: string;
+}> {}
 
-export type WithdrawResult<T> =
-  | { readonly success: true; readonly value: T }
-  | { readonly success: false; readonly error: WithdrawError };
+export class InvalidAmount extends Data.TaggedError('InvalidAmount')<{
+  readonly amount: number;
+  readonly reason: string;
+}> {}
 
-// Error constructors
-export const WithdrawError = {
-  accountNotFound: (accountId: string): WithdrawError => ({
-    _tag: 'AccountNotFound',
-    accountId
-  }),
-  invalidAmount: (amount: number, reason: string): WithdrawError => ({
-    _tag: 'InvalidAmount',
-    amount,
-    reason
-  }),
-  insufficientFunds: (balance: number, requested: number): WithdrawError => ({
-    _tag: 'InsufficientFunds',
-    balance,
-    requested
-  })
-};
+export class InsufficientFunds extends Data.TaggedError('InsufficientFunds')<{
+  readonly balance: number;
+  readonly requested: number;
+}> {}
+
+export type WithdrawError = AccountNotFound | InvalidAmount | InsufficientFunds;
 
 // =============================================================================
-// DOMAIN LOGIC (pure functions with typed errors)
+// DOMAIN LOGIC (Effect-based with typed errors)
 // =============================================================================
 
 /**
@@ -98,43 +104,42 @@ export const WithdrawError = {
  * @source-assertion A-001: "Balance never negative after withdraw"
  * @source-spec specs/dafny/structure.dfy:15-25
  */
-export function withdraw(
+export const withdraw = (
   account: Account,
   amount: number
-): WithdrawResult<Account> {
-  // Precondition: amount > 0
-  if (amount <= 0) {
+): Effect.Effect<Account, WithdrawError> =>
+  Effect.gen(function* () {
+    // Precondition: amount > 0
+    if (amount <= 0) {
+      return yield* Effect.fail(
+        new InvalidAmount({ amount, reason: 'Amount must be positive' })
+      );
+    }
+
+    // Precondition: amount <= balance
+    if (amount > account.balance) {
+      return yield* Effect.fail(
+        new InsufficientFunds({
+          balance: account.balance,
+          requested: amount
+        })
+      );
+    }
+
+    // Postcondition: new balance = old balance - amount
+    // Invariant: balance >= 0 (guaranteed by preconditions)
+    const newBalance = nonNegativeBalance(account.balance - amount);
+
+    if (newBalance === null) {
+      // This should never happen if preconditions are correct
+      throw new Error('Invariant violation: balance became negative');
+    }
+
     return {
-      success: false,
-      error: WithdrawError.invalidAmount(amount, 'Amount must be positive')
-    };
-  }
-
-  // Precondition: amount <= balance
-  if (amount > account.balance) {
-    return {
-      success: false,
-      error: WithdrawError.insufficientFunds(account.balance, amount)
-    };
-  }
-
-  // Postcondition: new balance = old balance - amount
-  // Invariant: balance >= 0 (guaranteed by preconditions)
-  const newBalance = nonNegativeBalance(account.balance - amount);
-
-  if (newBalance === null) {
-    // This should never happen if preconditions are correct
-    throw new Error('Invariant violation: balance became negative');
-  }
-
-  return {
-    success: true,
-    value: {
       ...account,
       balance: newBalance
-    }
-  };
-}
+    };
+  });
 
 // =============================================================================
 // CONTRACT CHECKING (development mode)
@@ -158,24 +163,25 @@ interface Contract<Args extends unknown[], Result> {
 }
 
 function withContract<Args extends unknown[], Result>(
-  fn: (...args: Args) => Result,
+  fn: (...args: Args) => Effect.Effect<Result, WithdrawError>,
   contract: Contract<Args, Result>
-): (...args: Args) => Result {
-  return (...args: Args): Result => {
-    // Check precondition
-    if (contract.pre && !contract.pre(...args)) {
-      throw new ContractViolation(contract.assertionId, 'precondition', { args });
-    }
+): (...args: Args) => Effect.Effect<Result, WithdrawError> {
+  return (...args: Args) =>
+    Effect.gen(function* () {
+      // Check precondition
+      if (contract.pre && !contract.pre(...args)) {
+        throw new ContractViolation(contract.assertionId, 'precondition', { args });
+      }
 
-    const result = fn(...args);
+      const result = yield* fn(...args);
 
-    // Check postcondition
-    if (contract.post && !contract.post(result, ...args)) {
-      throw new ContractViolation(contract.assertionId, 'postcondition', { args, result });
-    }
+      // Check postcondition
+      if (contract.post && !contract.post(result, ...args)) {
+        throw new ContractViolation(contract.assertionId, 'postcondition', { args, result });
+      }
 
-    return result;
-  };
+      return result;
+    });
 }
 
 // Withdraw with contract checking enabled
@@ -187,10 +193,9 @@ export const withdrawChecked = withContract(withdraw, {
   },
   post: (result, account, amount) => {
     // All postconditions from Dafny spec
-    if (!result.success) return true; // Errors are valid outcomes
     return (
-      result.value.balance === account.balance - amount &&
-      result.value.balance >= 0
+      result.balance === account.balance - amount &&
+      result.balance >= 0
     );
   }
 });
@@ -199,7 +204,7 @@ export const withdrawChecked = withContract(withdraw, {
 // EXHAUSTIVE ERROR HANDLING
 // =============================================================================
 
-export function handleWithdrawError(error: WithdrawError): string {
+export const handleWithdrawError = (error: WithdrawError): string => {
   switch (error._tag) {
     case 'AccountNotFound':
       return `Account ${error.accountId} not found`;
@@ -212,15 +217,15 @@ export function handleWithdrawError(error: WithdrawError): string {
       const _exhaustive: never = error;
       return _exhaustive;
   }
-}
+};
 
 // =============================================================================
 // USAGE EXAMPLE
 // =============================================================================
 
-export function example() {
+export const example = async () => {
   // Create account (validated at boundary)
-  const accountData = AccountSchema.parse({
+  const accountData = Schema.decodeUnknownSync(AccountSchema)({
     id: 'acc-123',
     balance: 100,
     name: 'Test Account',
@@ -228,20 +233,38 @@ export function example() {
   });
 
   // Withdraw (type-safe, error-tracked)
-  const result = withdraw(accountData, 50);
+  const result = await Effect.runPromiseExit(withdraw(accountData, 50));
 
-  if (result.success) {
+  if (result._tag === 'Success') {
     console.log(`New balance: ${result.value.balance}`);
-  } else {
-    console.error(handleWithdrawError(result.error));
+  } else if (result._tag === 'Failure') {
+    const error = result.cause;
+    if (error._tag === 'Fail') {
+      console.error(handleWithdrawError(error.error));
+    }
   }
+
+  // With comprehensive error handling using catchTags
+  const program = Effect.gen(function* () {
+    const updated = yield* withdraw(accountData, 200);
+    return updated;
+  }).pipe(
+    Effect.catchTags({
+      InvalidAmount: (e) => Effect.succeed({ error: `Invalid: ${e.reason}` }),
+      InsufficientFunds: (e) => Effect.succeed({ error: `Insufficient: ${e.balance} < ${e.requested}` }),
+      AccountNotFound: (e) => Effect.succeed({ error: `Not found: ${e.accountId}` })
+    })
+  );
+
+  const handled = await Effect.runPromise(program);
+  console.log(handled);
 
   // With contract checking (development)
   try {
-    const checkedResult = withdrawChecked(accountData, 200);
+    await Effect.runPromise(withdrawChecked(accountData, 200));
   } catch (e) {
     if (e instanceof ContractViolation) {
       console.error(`Contract [${e.assertionId}] ${e.type} failed`);
     }
   }
-}
+};

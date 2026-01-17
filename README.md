@@ -153,7 +153,7 @@ You: Generate the code
 
 Claude: [code-generator agent activates]
         Generated:
-        - src/types/account.ts (Zod schemas)
+        - src/types/account.ts (Effect Schemas)
         - src/validation/account.ts (validators)
         - src/domain/account.ts (business logic)
         - tests/account.test.ts (property tests)
@@ -199,6 +199,18 @@ Essential resources for writing and understanding Dafny specifications:
 | [Dafny Repository](https://github.com/dafny-lang/dafny) | Official Dafny verification language |
 | [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef) | Complete language reference |
 | [Dafny Tutorial](https://dafny.org/latest/OnlineTutorial/guide) | Getting started guide |
+
+## Effect Resources
+
+This plugin uses [Effect](https://effect.website/) for TypeScript runtime validation and error handling:
+
+| Resource | Description |
+|----------|-------------|
+| [Effect Documentation](https://effect.website/docs) | Official Effect documentation |
+| [Effect Schema](https://effect.website/docs/schema/introduction) | Schema validation (replaces Zod) |
+| [Effect GitHub](https://github.com/Effect-TS/effect) | Effect source code repository |
+| [Effect Examples](https://github.com/Effect-TS/examples) | Example projects using Effect |
+| [Effect LSP/DevTools](https://effect.website/docs/getting-started/devtools/) | IDE integration and developer tools |
 
 ## License
 
