@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "If this bash command is 'bun test' or 'npm test' and no package.json exists, warn that tests cannot run without scaffolding. Suggest running /scaffold first. If package.json exists but node_modules is missing, suggest running 'bun install' first.",
+            "prompt": "APPROVE this command unless ALL of the following are true: 1) The command is running tests (bun test, npm test, or similar), AND 2) package.json does not exist. Only in that case, warn that tests cannot run without scaffolding and suggest /scaffold first. For ALL other commands (mkdir, ls, cat, etc.), APPROVE immediately.",
             "timeout": 10
           }
         ]
