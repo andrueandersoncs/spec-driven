@@ -41,6 +41,8 @@ If no argument, generate all layers in order.
 
 ## Verified Extraction (Mode 1)
 
+Dafny can compile verified code directly to multiple target languages. See [Compilation](https://dafny.org/latest/DafnyRef/DafnyRef#sec-compilation) in the Dafny Reference Manual for full details on supported targets and options.
+
 ### Extract from Dafny
 
 ```bash

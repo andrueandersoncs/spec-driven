@@ -32,6 +32,8 @@ Instruct user to enter nix develop shell or install tools manually.
 
 ## Dafny Verification
 
+See [Verification](https://dafny.org/latest/DafnyRef/DafnyRef#sec-verification) in the Dafny Reference Manual for detailed guidance on debugging verification failures.
+
 ### Run Verifier
 
 ```bash

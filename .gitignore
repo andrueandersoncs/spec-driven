@@ -4,6 +4,7 @@
 # OS files
 .DS_Store
 Thumbs.db
+._*
 
 # Editor files
 *.swp
@@ -11,7 +12,39 @@ Thumbs.db
 *~
 .idea/
 .vscode/
+*.sublime-*
 
 # Temporary files
 *.tmp
 *.temp
+*.log
+
+# Node.js (if used in generated projects)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dafny artifacts
+*.dll
+*.exe
+*.pdb
+*-cs/
+*-java/
+*-go/
+*-py/
+*-js/
+
+# TLA+ artifacts
+*.toolbox/
+states/
+*.dot
+*.dump
+
+# Generated code (if tracking separately)
+generated/
+
+# Nix
+result
+result-*
+.direnv/

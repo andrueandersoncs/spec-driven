@@ -66,7 +66,7 @@ From Dafny:
 type Age = x: int | 0 < x < 150
 class Account {
   var balance: int
-  invariant balance >= 0
+  ghost predicate Valid() { balance >= 0 }
 }
 ```
 

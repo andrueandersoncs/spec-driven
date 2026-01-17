@@ -1,6 +1,6 @@
 ---
-name: Archetype Templates
-description: This skill should be used when identifying software archetypes, loading default assertions for a project type, probing what kind of software is being built, or when the user asks "what type of software is this", "load CLI tool assertions", "load web service assertions", "what archetype is this", "initialize spec for library", or describes building a specific type of application.
+name: archetype-templates
+description: This skill should be used when identifying software archetypes, loading default assertions for a project type, probing what kind of software is being built, or when the user asks "what type of software is this", "load CLI tool assertions", "load web service assertions", "what archetype is this", "initialize spec for library", "what assertions apply to my project type", "bootstrap assertions for a CLI", "default specs for an API", or describes building a specific type of application (CLI, library, web service, data pipeline, desktop app, compiler).
 version: 0.1.0
 ---
 
@@ -213,6 +213,10 @@ Templates are starting points. Expect users to:
 - **Add** domain-specific assertions not in template
 
 ## Additional Resources
+
+### Example Files
+- **`examples/cli-tool-assertions.json`** - Complete CLI tool assertion set in JSON format
+- **`examples/web-service-assertions.json`** - Complete web service assertion set in JSON format
 
 ### Related Skills
 - `domain-templates` - Domain-specific overlays (finance, auth, etc.)

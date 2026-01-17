@@ -17,14 +17,16 @@ Extended examples demonstrating assertion classification for each category.
 
 ### Entity Invariants
 
-| Natural Language | Classification | Dafny |
-|-----------------|----------------|-------|
-| "Account balance never negative" | invariant | `invariant balance >= 0` |
-| "Cart total equals sum of item prices" | invariant | `invariant total == Sum(items, (i) => i.price)` |
-| "User always has valid email" | invariant | `invariant ValidEmail(email)` |
-| "Order items list is never empty" | invariant | `invariant \|items\| > 0` |
-| "Session token is non-empty when logged in" | invariant | `invariant loggedIn ==> token != ""` |
-| "Audit trail is append-only" | invariant | `invariant old(auditLog) <= auditLog` |
+In Dafny, class invariants are expressed using `Valid()` predicates. See [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef#sec-class-types).
+
+| Natural Language | Classification | Dafny Valid() predicate |
+|-----------------|----------------|-------------------------|
+| "Account balance never negative" | invariant | `ghost predicate Valid() { balance >= 0 }` |
+| "Cart total equals sum of item prices" | invariant | `ghost predicate Valid() { total == Sum(items) }` |
+| "User always has valid email" | invariant | `ghost predicate Valid() { ValidEmail(email) }` |
+| "Order items list is never empty" | invariant | `ghost predicate Valid() { \|items\| > 0 }` |
+| "Session token is non-empty when logged in" | invariant | `ghost predicate Valid() { loggedIn ==> token != "" }` |
+| "Audit trail is append-only" | invariant | (use ghost history variable in method postconditions) |
 
 ### Preconditions
 
@@ -146,7 +148,7 @@ These cases require careful analysis:
 ### "Consistency" Requirements
 
 "Data is consistent"
-- **If about data shape**: Dafny invariant → `invariant Consistent(data)`
+- **If about data shape**: Dafny Valid() predicate → `ghost predicate Valid() { Consistent(data) }`
 - **If about eventual consistency**: TLA+ liveness → `[]<>Consistent`
 - **Resolution**: Ask if it's point-in-time or eventually consistent
 

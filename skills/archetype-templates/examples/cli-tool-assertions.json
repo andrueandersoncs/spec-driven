@@ -1,0 +1,102 @@
+{
+  "archetype": "cli-tool",
+  "description": "Default assertions for command-line tools",
+  "assertions": [
+    {
+      "id": "A-CLI-001",
+      "natural": "Exit code 0 indicates success",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-002",
+      "natural": "Exit code non-zero indicates error",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-003",
+      "natural": "Invalid arguments produce error exit code",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-004",
+      "natural": "Help flag (-h, --help) shows usage information",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-005",
+      "natural": "Version flag (-v, --version) shows version number",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-006",
+      "natural": "Required arguments are enforced",
+      "type": "precondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-007",
+      "natural": "Configuration file schema is validated on load",
+      "type": "precondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-008",
+      "natural": "Output format matches specified type (JSON, text, etc.)",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-009",
+      "natural": "Normal output goes to stdout, errors to stderr",
+      "type": "invariant",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-010",
+      "natural": "Ctrl+C produces graceful shutdown",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-011",
+      "natural": "Long operations show progress indication",
+      "type": "liveness",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    },
+    {
+      "id": "A-CLI-012",
+      "natural": "Partial failure does not corrupt output",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-cli-tool"
+    }
+  ]
+}

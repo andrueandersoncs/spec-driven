@@ -62,7 +62,7 @@ For each assertion, show:
 ```
 [A-001] ✓ CONFIRMED (structure/invariant)
   "Account balance never negative"
-  → Dafny: invariant balance >= 0
+  → Dafny: ghost predicate Valid() { balance >= 0 }
   Source: user-interview-001
 
 [A-002] ✓ CONFIRMED (structure/precondition)
@@ -92,17 +92,17 @@ Types:
 
 Classes:
   - Account
-    Invariants:
+    Valid() predicate:
       - balance >= 0
     Methods:
-      - Withdraw(amount) requires/ensures...
-      - Deposit(amount) requires/ensures...
+      - Withdraw(amount) requires Valid(); ensures Valid()...
+      - Deposit(amount) requires Valid(); ensures Valid()...
 
   - Order
-    Invariants:
+    Valid() predicate:
       - |items| > 0
     Methods:
-      - AddItem(...) requires/ensures...
+      - AddItem(...) requires Valid(); ensures Valid()...
 
 Predicates:
   - ValidEmail(s)

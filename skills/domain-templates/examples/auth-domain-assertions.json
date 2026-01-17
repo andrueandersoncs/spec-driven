@@ -1,0 +1,115 @@
+{
+  "domain": "auth",
+  "description": "Assertions for authentication and authorization systems",
+  "compliance": ["OWASP", "NIST-800-63B"],
+  "assertions": [
+    {
+      "id": "A-AUTH-001",
+      "natural": "Passwords are never stored in plaintext",
+      "type": "invariant",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["critical", "security"]
+    },
+    {
+      "id": "A-AUTH-002",
+      "natural": "Password hash uses approved algorithm (bcrypt, argon2)",
+      "type": "data-constraint",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["security"]
+    },
+    {
+      "id": "A-AUTH-003",
+      "natural": "Session tokens are cryptographically random",
+      "type": "data-constraint",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["security"]
+    },
+    {
+      "id": "A-AUTH-004",
+      "natural": "Token expiration is explicitly set",
+      "type": "data-constraint",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["security"]
+    },
+    {
+      "id": "A-AUTH-005",
+      "natural": "Permissions are explicit, not implied",
+      "type": "invariant",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["authorization"]
+    },
+    {
+      "id": "A-AUTH-006",
+      "natural": "Role hierarchy is well-defined",
+      "type": "data-constraint",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["authorization"]
+    },
+    {
+      "id": "A-AUTH-007",
+      "natural": "Login creates new session",
+      "type": "postcondition",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["session"]
+    },
+    {
+      "id": "A-AUTH-008",
+      "natural": "Logout invalidates session",
+      "type": "postcondition",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["session"]
+    },
+    {
+      "id": "A-AUTH-009",
+      "natural": "Session expires after inactivity timeout",
+      "type": "liveness",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["session", "security"]
+    },
+    {
+      "id": "A-AUTH-010",
+      "natural": "Failed logins trigger rate limiting",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["security", "brute-force"]
+    },
+    {
+      "id": "A-AUTH-011",
+      "natural": "Password reset invalidates old password immediately",
+      "type": "postcondition",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["security"]
+    },
+    {
+      "id": "A-AUTH-012",
+      "natural": "MFA required for sensitive operations",
+      "type": "precondition",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-auth",
+      "tags": ["security", "mfa"]
+    }
+  ]
+}

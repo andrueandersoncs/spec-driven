@@ -1,6 +1,6 @@
 ---
-name: Domain Templates
-description: This skill should be used when identifying application domains, loading domain-specific assertions, handling compliance requirements, or when the user asks "this is a finance app", "load healthcare assertions", "what domain constraints apply", "add auth domain", "this handles payments", or describes domain-specific requirements like HIPAA, PCI, or financial regulations.
+name: domain-templates
+description: This skill should be used when identifying application domains, loading domain-specific assertions, handling compliance requirements, or when the user asks "this is a finance app", "load healthcare assertions", "what domain constraints apply", "add auth domain", "this handles payments", "what compliance rules apply", "load multi-tenant assertions", "add e-commerce domain", "what real-time constraints should I add", or describes domain-specific requirements like HIPAA, PCI, SOX, or financial regulations.
 version: 0.1.0
 ---
 
@@ -238,6 +238,10 @@ Each layer can:
 - Override defaults with user confirmation
 
 ## Additional Resources
+
+### Example Files
+- **`examples/finance-domain-assertions.json`** - Complete finance domain assertion set in JSON format
+- **`examples/auth-domain-assertions.json`** - Complete auth domain assertion set in JSON format
 
 ### Related Skills
 - `archetype-templates` - Base layer assertions

@@ -1,6 +1,6 @@
 ---
-name: Dafny Patterns
-description: This skill should be used when writing Dafny specifications, creating refinement types, writing method contracts (requires/ensures), defining class invariants, working with Dafny verification, or when the user asks "write a Dafny spec", "create a contract", "define an invariant", "add preconditions", "add postconditions", or "verify this with Dafny".
+name: dafny-patterns
+description: This skill should be used when writing Dafny specifications, creating refinement types, writing method contracts (requires/ensures), defining class invariants, working with Dafny verification, or when the user asks "write a Dafny spec", "create a contract", "define an invariant", "add preconditions", "add postconditions", "verify this with Dafny", "how do I write a Dafny class", "extract code from Dafny", or "compile Dafny to JavaScript".
 version: 0.1.0
 ---
 
@@ -36,7 +36,7 @@ specs/dafny/
 
 ## Refinement Types
 
-Constrain primitive types with logical predicates.
+Constrain primitive types with logical predicates. See [Subset Types](https://dafny.org/latest/DafnyRef/DafnyRef#sec-subset-types) in the Dafny Reference Manual.
 
 ### Pattern: Constrained Numeric
 
@@ -73,21 +73,40 @@ type ActiveStatus = s: Status | s.Pending? || s.Active?
 
 ## Class Invariants
 
-State constraints that hold between method calls.
+State constraints that hold between method calls. In Dafny, class invariants are expressed using `Valid()` predicates—the standard "dynamic frames" idiom. See [Class Types](https://dafny.org/latest/DafnyRef/DafnyRef#sec-class-types) in the Dafny Reference Manual.
 
-### Pattern: Simple Invariant
+**Note**: The `invariant` keyword is used for loop invariants, not class-level invariants. For object invariants, define a `Valid()` predicate and include it in method pre/postconditions.
+
+### Pattern: Simple Invariant with Valid()
 
 ```dafny
 class Account {
   var balance: int
 
+  // Object invariant as a predicate
   // Natural language: "Balance never negative"
-  invariant balance >= 0
+  ghost predicate Valid()
+    reads this
+  {
+    balance >= 0
+  }
 
   constructor(initial: int)
     requires initial >= 0
+    ensures Valid()
+    ensures balance == initial
   {
     balance := initial;
+  }
+
+  method Deposit(amount: int)
+    requires Valid()
+    requires amount > 0
+    modifies this
+    ensures Valid()
+    ensures balance == old(balance) + amount
+  {
+    balance := balance + amount;
   }
 }
 ```
@@ -97,14 +116,28 @@ class Account {
 ```dafny
 class ShoppingCart {
   var items: seq<CartItem>
-  var total: Price
+  var total: real
+
+  function SumPrices(xs: seq<CartItem>): real {
+    if |xs| == 0 then 0.0
+    else xs[0].price + SumPrices(xs[1..])
+  }
 
   // Natural language: "Total equals sum of item prices"
-  invariant total == SumPrices(items)
+  ghost predicate Valid()
+    reads this
+  {
+    total == SumPrices(items)
+  }
 
-  function SumPrices(items: seq<CartItem>): Price {
-    if |items| == 0 then 0.0
-    else items[0].price + SumPrices(items[1..])
+  method AddItem(item: CartItem)
+    requires Valid()
+    modifies this
+    ensures Valid()
+    ensures items == old(items) + [item]
+  {
+    items := items + [item];
+    total := total + item.price;
   }
 }
 ```
@@ -113,20 +146,23 @@ class ShoppingCart {
 
 ```dafny
 class Order {
-  var customer: Customer  // Non-null reference
+  var customer: Customer
   var items: seq<OrderItem>
 
   // Natural language: "Order always has at least one item"
-  invariant |items| > 0
-
   // Natural language: "All items reference this order"
-  invariant forall i :: 0 <= i < |items| ==> items[i].order == this
+  ghost predicate Valid()
+    reads this, items
+  {
+    |items| > 0 &&
+    forall i :: 0 <= i < |items| ==> items[i].order == this
+  }
 }
 ```
 
 ## Method Contracts
 
-Specify operation behavior with pre/postconditions.
+Specify operation behavior with pre/postconditions. See [Method Specification](https://dafny.org/latest/DafnyRef/DafnyRef#sec-method-specification), [Requires Clause](https://dafny.org/latest/DafnyRef/DafnyRef#sec-requires-clause), and [Ensures Clause](https://dafny.org/latest/DafnyRef/DafnyRef#sec-ensures-clause) in the Dafny Reference Manual.
 
 ### Pattern: Basic Contract
 
@@ -174,7 +210,7 @@ method FindUser(id: UserId) returns (user: User?)
 
 ## Predicates
 
-Reusable boolean conditions.
+Reusable boolean conditions. See [Predicates](https://dafny.org/latest/DafnyRef/DafnyRef#642-predicates) in the Dafny Reference Manual.
 
 ### Pattern: Validation Predicate
 
@@ -218,7 +254,7 @@ predicate UniqueEmails(users: set<User>) {
 
 ## Ghost State
 
-Specification-only state for verification.
+Specification-only state for verification. Ghost variables exist only during verification and are erased at compile time.
 
 ### Pattern: Audit Trail
 
@@ -237,6 +273,8 @@ class SecureResource {
 ```
 
 ## Verification Workflow
+
+See [Verification](https://dafny.org/latest/DafnyRef/DafnyRef#sec-verification) in the Dafny Reference Manual for comprehensive guidance on debugging verification failures and performance issues.
 
 ### Running Verification
 
@@ -282,7 +320,7 @@ method Sum(xs: seq<int>) returns (s: int)
 
 ## Code Extraction
 
-Dafny compiles to multiple targets:
+Dafny compiles to multiple targets. See [Compilation](https://dafny.org/latest/DafnyRef/DafnyRef#sec-compilation) in the Dafny Reference Manual for full details on each target language.
 
 ```bash
 # To JavaScript (for TypeScript projects)
@@ -302,7 +340,7 @@ Map Dafny constructs to TLA+ for cross-model consistency:
 | Dafny | TLA+ Equivalent |
 |-------|-----------------|
 | `class Foo { var x: int }` | `VARIABLE foo` with `foo.x ∈ Int` |
-| `invariant P` | `Invariant: P` |
+| `ghost predicate Valid() { P }` | `Invariant == P` |
 | `method M() requires P ensures Q` | `M == P /\ ... /\ Q'` |
 | `old(x)` | `x` (unprimed, current state) |
 | `ensures x == ...` | `x' = ...` (primed, next state) |
@@ -313,5 +351,6 @@ Map Dafny constructs to TLA+ for cross-model consistency:
 - **`examples/account.dfy`** - Complete banking domain example with invariants, contracts, and transfers
 
 ### External References
-- [Dafny Language Reference](https://dafny.org/dafny/DafnyRef/DafnyRef)
-- [Dafny Tutorial](https://dafny.org/latest/OnlineTutorial/guide)
+- [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef) - Complete language specification
+- [Dafny Tutorial](https://dafny.org/latest/OnlineTutorial/guide) - Interactive getting started guide
+- [Dafny FAQ](https://dafny.org/latest/HowToFAQ/Faq) - Common questions and troubleshooting

@@ -1,6 +1,6 @@
 ---
-name: TLA+ Patterns
-description: This skill should be used when writing TLA+ specifications, defining state machines, specifying temporal properties (liveness, safety), model checking with TLC, or when the user asks "write a TLA+ spec", "model this behavior", "check this property", "verify concurrency", "define a state machine", or "check for deadlocks".
+name: tla-patterns
+description: This skill should be used when writing TLA+ specifications, defining state machines, specifying temporal properties (liveness, safety), model checking with TLC, or when the user asks "write a TLA+ spec", "model this behavior", "check this property", "verify concurrency", "define a state machine", "check for deadlocks", "add fairness constraints", "write temporal logic", or "run TLC model checker".
 version: 0.1.0
 ---
 

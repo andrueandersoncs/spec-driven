@@ -1,0 +1,115 @@
+{
+  "domain": "finance",
+  "description": "Assertions for financial applications handling money, transactions, and accounts",
+  "compliance": ["SOX", "PCI-DSS", "AML"],
+  "assertions": [
+    {
+      "id": "A-FIN-001",
+      "natural": "Monetary amounts use decimal representation, not floating point",
+      "type": "data-constraint",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["critical", "precision"]
+    },
+    {
+      "id": "A-FIN-002",
+      "natural": "Currency is explicitly tracked with all monetary amounts",
+      "type": "data-constraint",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["data-integrity"]
+    },
+    {
+      "id": "A-FIN-003",
+      "natural": "All transactions are immutable records",
+      "type": "invariant",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["audit", "compliance"]
+    },
+    {
+      "id": "A-FIN-004",
+      "natural": "Audit trail exists for all state changes",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["audit", "compliance", "SOX"]
+    },
+    {
+      "id": "A-FIN-005",
+      "natural": "No negative balances without explicit overdraft agreement",
+      "type": "invariant",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["critical"]
+    },
+    {
+      "id": "A-FIN-006",
+      "natural": "Exchange rates are timestamped",
+      "type": "data-constraint",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["multi-currency"]
+    },
+    {
+      "id": "A-FIN-007",
+      "natural": "Rounding rules are explicit and consistent",
+      "type": "invariant",
+      "category": "structure",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["precision"]
+    },
+    {
+      "id": "A-FIN-008",
+      "natural": "Double-entry bookkeeping maintained (debits equal credits)",
+      "type": "invariant",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["critical", "accounting"]
+    },
+    {
+      "id": "A-FIN-009",
+      "natural": "Transactions are atomic",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["critical"]
+    },
+    {
+      "id": "A-FIN-010",
+      "natural": "Failed transactions fully roll back",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["critical"]
+    },
+    {
+      "id": "A-FIN-011",
+      "natural": "Concurrent access to same account is serialized",
+      "type": "mutual-exclusion",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "A-FIN-012",
+      "natural": "Settlement eventually completes",
+      "type": "liveness",
+      "category": "behavior",
+      "status": "pending",
+      "source": "domain-finance",
+      "tags": []
+    }
+  ]
+}

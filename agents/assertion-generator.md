@@ -102,7 +102,7 @@ Based on your requirement, I've identified these assertions:
 
 [A-003] (structure/invariant)
   "Account balance never goes negative"
-  → Dafny: invariant balance >= 0
+  → Dafny: ghost predicate Valid() { balance >= 0 }
 ```
 
 **User Interaction:**

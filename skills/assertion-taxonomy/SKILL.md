@@ -1,6 +1,6 @@
 ---
-name: Assertion Taxonomy
-description: This skill should be used when classifying user requirements into formal assertions, determining whether an assertion is "structural" (Dafny) or "behavioral" (TLA+), categorizing assertions by type (invariant, precondition, postcondition, liveness, safety, etc.), or when the user asks "is this a Dafny or TLA+ assertion", "what type of assertion is this", "classify this requirement", or "route this to the right model".
+name: assertion-taxonomy
+description: This skill should be used when classifying user requirements into formal assertions, determining whether an assertion is "structural" (Dafny) or "behavioral" (TLA+), categorizing assertions by type (invariant, precondition, postcondition, liveness, safety, etc.), or when the user asks "is this a Dafny or TLA+ assertion", "what type of assertion is this", "classify this requirement", "route this to the right model", "which model should I use for this", "help me decide between Dafny and TLA+", "categorize this spec", or "is this structure or behavior".
 version: 0.1.0
 ---
 
@@ -36,9 +36,9 @@ Is this about a SINGLE moment in time, or SEQUENCES of states?
     └── "X and Y don't overlap" → mutual exclusion
 ```
 
-## Structure Assertions (→ Dafny)
+## Classify Structure Assertions (Route to Dafny)
 
-These assertions constrain what is true at any single point in time.
+Identify and route assertions that constrain what is true at any single point in time.
 
 ### Data Constraint
 **Pattern**: "X must be/have Y"
@@ -49,8 +49,10 @@ These assertions constrain what is true at any single point in time.
 ### Entity Invariant
 **Pattern**: "X is always Y" (for entity state)
 **Examples**:
-- "Account balance never negative" → `invariant balance >= 0`
-- "Order total equals sum of items" → `invariant total == SumItems(items)`
+- "Account balance never negative" → `ghost predicate Valid() { balance >= 0 }`
+- "Order total equals sum of items" → `ghost predicate Valid() { total == SumItems(items) }`
+
+**Note**: In Dafny, class invariants are expressed using `Valid()` predicates (see [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef#sec-class-types)).
 
 ### Precondition
 **Pattern**: "Can only X if Y" / "X requires Y"
@@ -75,9 +77,9 @@ These assertions constrain what is true at any single point in time.
 **Examples**:
 - "Email addresses unique across users" → `predicate UniqueEmails(users: set<User>)`
 
-## Behavior Assertions (→ TLA+)
+## Classify Behavior Assertions (Route to TLA+)
 
-These assertions constrain sequences of states over time.
+Identify and route assertions that constrain sequences of states over time.
 
 ### Liveness
 **Pattern**: "Eventually X" / "X leads to Y"
@@ -115,7 +117,7 @@ These assertions constrain sequences of states over time.
 - "At most one writer" → `Cardinality(writers) <= 1`
 - "Locks are exclusive" → mutual exclusion
 
-## Intermediate Representation
+## Create Intermediate Representation
 
 Transform natural language to structured form before generating formal specs:
 
@@ -139,9 +141,9 @@ This enables:
 - **Traceability**: Link to `source`
 - **Conflict detection**: Compare constraints
 
-## Ambiguous Cases
+## Handle Ambiguous Cases
 
-Some requirements could go either way. Apply these tiebreakers:
+When requirements could go either way, apply these tiebreakers:
 
 | Indicator | Route To |
 |-----------|----------|
@@ -156,9 +158,9 @@ Some requirements could go either way. Apply these tiebreakers:
 When genuinely ambiguous, ask the user:
 > "Is this about what's true at each moment (→ Dafny), or about how the system evolves over time (→ TLA+)?"
 
-## Cross-Model Consistency
+## Verify Cross-Model Consistency
 
-When both models exist, verify consistency:
+When both models exist, check consistency between them:
 
 1. Every TLA+ action should preserve Dafny invariants
 2. Every Dafny method should have a TLA+ action counterpart
@@ -168,6 +170,7 @@ When both models exist, verify consistency:
 
 ### Reference Files
 - **`references/classification-examples.md`** - Extended examples for each assertion category
+- **`references/assertion-manifest-format.md`** - Complete schema for `specs/assertions.json` manifest
 
 ### Workflow Integration
 

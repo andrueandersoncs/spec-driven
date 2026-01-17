@@ -1,6 +1,6 @@
 ---
-name: Code Generation
-description: This skill should be used when generating code from verified specifications, extracting code from Dafny, creating TypeScript implementations from specs, generating Zod schemas, writing spec-guided code, or when the user asks "generate code", "extract from Dafny", "create implementation", "generate TypeScript", "write the code", or "create Zod schemas from spec".
+name: code-generation
+description: This skill should be used when generating code from verified specifications, extracting code from Dafny, creating TypeScript implementations from specs, generating Zod schemas, writing spec-guided code, or when the user asks "generate code", "extract from Dafny", "create implementation", "generate TypeScript", "write the code", "create Zod schemas from spec", "compile specs to code", "implement the domain logic", or "generate tests from contracts".
 version: 0.1.0
 ---
 
@@ -160,7 +160,7 @@ Every generated artifact links to source:
 **From Dafny classes and refinement types:**
 
 ```typescript
-// From: class Account { var balance: int; invariant balance >= 0 }
+// From: class Account { var balance: int; ghost predicate Valid() { balance >= 0 } }
 interface Account {
   id: string;
   balance: number;

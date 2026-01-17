@@ -64,17 +64,21 @@ The models are not independent — they share a common semantic foundation:
 ```
 Dafny class Account {           ←→    TLA+ VARIABLE account
   var balance: int                    account ∈ Int
-  invariant balance >= 0              Invariant: account >= 0
+  ghost predicate Valid() {           Invariant == account >= 0
+    balance >= 0
+  }
 
   method Withdraw(amt: int)     ←→    Withdraw(amt) ==
-    requires amt <= balance             /\ amt <= account
-    ensures balance == old(balance) - amt   /\ account' = account - amt
+    requires Valid()                    /\ amt <= account
+    requires amt <= balance
+    ensures Valid()                     /\ account' = account - amt
+    ensures balance == old(balance) - amt
 }
 ```
 
 **Translation rules**:
 1. Dafny `class` → TLA+ `VARIABLE` (one per instance, or a function for collections)
-2. Dafny `invariant` → TLA+ `Invariant` (checked at every state)
+2. Dafny `Valid()` predicate → TLA+ `Invariant` (checked at every state)
 3. Dafny `method` → TLA+ action (state transition)
 4. Dafny `requires`/`ensures` → TLA+ action precondition/postcondition
 
@@ -92,7 +96,7 @@ User intent decomposes into assertions. Each assertion maps to a specific formal
 | Category | Example (Natural Language) | Dafny Construct |
 |----------|---------------------------|-----------------|
 | **Data constraint** | "User age must be positive" | `type Age = x: int \| x > 0` |
-| **Entity invariant** | "Account balance never negative" | `invariant balance >= 0` |
+| **Entity invariant** | "Account balance never negative" | `ghost predicate Valid() { balance >= 0 }` |
 | **Precondition** | "Can only withdraw if sufficient funds" | `requires amount <= balance` |
 | **Postcondition** | "Deposit increases balance by exact amount" | `ensures balance == old(balance) + amount` |
 | **Relationship** | "Every order belongs to exactly one customer" | `var customer: Customer` (non-null reference) |
@@ -391,8 +395,8 @@ Beginning Interview Loop...
 │     User specifies: 5                                            │
 │                                                                  │
 │  6. Confirmed assertions feed into formal models                 │
-│     → Dafny: invariant balance >= 0                             │
-│              requires amount <= balance                          │
+│     → Dafny: ghost predicate Valid() { balance >= 0 }           │
+│              requires Valid(); requires amount <= balance        │
 │     → TLA+:  Response ~> (Success \/ Error)                     │
 │              TemporalBound(Response, 5, "seconds")               │
 │                                                                  │

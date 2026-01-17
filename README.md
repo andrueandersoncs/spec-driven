@@ -27,7 +27,7 @@ nix develop
 ```
 
 Or install manually:
-- **Dafny**: https://github.com/dafny-lang/dafny/releases
+- **Dafny**: https://github.com/dafny-lang/dafny/releases (see [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef))
 - **TLA+ Tools**: https://github.com/tlaplus/tlaplus/releases
 
 ### Plugin Installation

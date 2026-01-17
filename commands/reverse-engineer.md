@@ -110,9 +110,13 @@ if (this.balance < 0) {
 }
 ```
 
-Generate Dafny invariant:
+Generate Dafny `Valid()` predicate (class invariant):
 ```dafny
-invariant balance >= 0
+ghost predicate Valid()
+  reads this
+{
+  balance >= 0
+}
 ```
 
 ### Extract Contracts

@@ -1,0 +1,102 @@
+{
+  "archetype": "web-service",
+  "description": "Default assertions for HTTP APIs and web services",
+  "assertions": [
+    {
+      "id": "A-WEB-001",
+      "natural": "Request body schema is enforced",
+      "type": "precondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-002",
+      "natural": "Response body matches documented schema",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-003",
+      "natural": "Authentication required for protected routes",
+      "type": "precondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-004",
+      "natural": "Input is sanitized before use",
+      "type": "precondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-005",
+      "natural": "Error responses have consistent format",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-006",
+      "natural": "2xx for success, 4xx for client error, 5xx for server error",
+      "type": "postcondition",
+      "category": "structure",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-007",
+      "natural": "Unauthenticated requests to protected routes return 401/403",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-008",
+      "natural": "Invalid input returns 4xx, not 5xx",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-009",
+      "natural": "Health endpoint always responds",
+      "type": "liveness",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-010",
+      "natural": "Requests have timeout",
+      "type": "liveness",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-011",
+      "natural": "Rate limiting prevents abuse",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-web-service"
+    },
+    {
+      "id": "A-WEB-012",
+      "natural": "Idempotent endpoints handle retry correctly",
+      "type": "safety",
+      "category": "behavior",
+      "status": "pending",
+      "source": "archetype-web-service"
+    }
+  ]
+}
