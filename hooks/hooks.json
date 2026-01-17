@@ -1,39 +1,7 @@
 {
-  "description": "Hooks for spec-driven development: validate specs, guide workflow, ensure verification before code generation",
+  "description": "Hooks for spec-driven development: load context and validate test prerequisites",
   "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "ALWAYS CONTINUE. Check the file path. ONLY if it ends in .dfy or .tla, respond with: 'Reminder: Run /verify to check spec consistency.' For ALL other files (including .json, .ts, .md, etc.), respond with exactly: 'continue'",
-            "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "ALWAYS CONTINUE. Check if file is in src/ directory. ONLY if in src/ AND package.json does NOT exist, respond with: 'Suggestion: Run /scaffold to make the code runnable.' For ALL other cases, respond with exactly: 'continue'",
-            "timeout": 15
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "ALWAYS APPROVE. Check the file path. ONLY if path contains src/ AND specs/assertions.json does NOT exist, respond with: 'Warning: Generating code without verified specs may produce incorrect code.' For ALL other cases (spec files, config files, non-src files), respond with exactly: 'approve'",
-            "timeout": 20
-          }
-        ]
-      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -41,18 +9,6 @@
             "type": "command",
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/check-test-prereqs.sh",
             "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "ALWAYS APPROVE stopping. Optionally add a brief reminder if: 1) .dfy/.tla files were modified but /verify wasn't run, or 2) src/ has code but no package.json exists. Keep any reminder under 20 words. If nothing to remind, respond with exactly: 'approve'",
-            "timeout": 20
           }
         ]
       }
