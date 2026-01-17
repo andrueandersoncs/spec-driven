@@ -1,8 +1,10 @@
 # docker-compose.yml
 # @generated from specs
 # Production-ready web service deployment
-
-version: '3.8'
+#
+# Reference: https://docs.docker.com/reference/compose-file/
+# Note: version field is obsolete and omitted
+# See: https://docs.docker.com/reference/compose-file/version-and-name/
 
 services:
   app:
@@ -15,18 +17,24 @@ services:
     environment:
       - NODE_ENV=production
       - LOG_LEVEL=${LOG_LEVEL:-info}
+    # Container health monitoring
+    # See: https://docs.docker.com/reference/compose-file/services/#healthcheck
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 5s
+    # Restart policy for production
+    # See: https://docs.docker.com/reference/compose-file/services/#restart
     restart: unless-stopped
-    # Security hardening
+    # Security hardening: read-only filesystem
+    # See: https://docs.docker.com/reference/compose-file/services/#read_only
     read_only: true
     tmpfs:
       - /tmp
-    # Resource limits
+    # Resource limits to prevent DoS and ensure fair sharing
+    # See: https://docs.docker.com/reference/compose-file/deploy/#resources
     deploy:
       resources:
         limits:
