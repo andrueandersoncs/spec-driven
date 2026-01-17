@@ -1,4 +1,6 @@
 ---
+name: runtime-patterns
+version: 0.1.0
 description: This skill provides TypeScript runtime validation patterns for spec-driven development. Use when generating runtime validators from Dafny specs, implementing Effect Schemas from refinement types, creating branded types, using Effect for error handling, or implementing runtime contract checking. Triggers on "runtime validation", "Effect Schema from spec", "branded types", "Effect error handling", "contract checking".
 ---
 

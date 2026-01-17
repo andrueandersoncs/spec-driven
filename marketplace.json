@@ -38,6 +38,10 @@
     "/interview - Extract formal assertions from natural language requirements",
     "/verify - Run formal verification on Dafny and TLA+ specs",
     "/generate - Generate implementation code from verified specifications",
+    "/scaffold - Generate project infrastructure to make generated code runnable",
+    "/test - Run tests and generate assertion coverage report",
+    "/dev - Start local development with spec-aware hot reloading",
+    "/deploy - Generate Docker deployment artifacts",
     "/reverse-engineer - Extract specifications from existing codebase",
     "/show-spec - Display current specification state and assertion coverage",
     "/resolve-conflict - Resolve contradictions found during verification"

@@ -1,0 +1,55 @@
+# docker-compose.yml
+# @generated from specs
+# Production-ready web service deployment
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    # Security hardening
+    read_only: true
+    tmpfs:
+      - /tmp
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # Uncomment if specs include persistence assertions
+  # db:
+  #   image: postgres:16-alpine
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   environment:
+  #     - POSTGRES_DB=appdb
+  #     - POSTGRES_USER=app
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD}
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+# volumes:
+#   pgdata:

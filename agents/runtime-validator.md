@@ -30,7 +30,7 @@ Behavioral violation. Check against TLA+ spec for state machine correctness.
 </example>
 
 model: inherit
-color: orange
+color: yellow
 tools: ["Read", "Grep", "Glob", "Bash"]
 ---
 

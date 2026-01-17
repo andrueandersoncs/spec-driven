@@ -1,4 +1,6 @@
 ---
+name: deployment-patterns
+version: 0.1.0
 description: This skill provides Docker deployment patterns for spec-driven TypeScript applications. Use when generating Dockerfiles, docker-compose configurations, health checks, or containerizing Bun applications. Triggers on "Docker", "containerize", "deploy", "Dockerfile", "docker-compose", "health check", "production deployment".
 ---
 
