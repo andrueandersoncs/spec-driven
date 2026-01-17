@@ -5,7 +5,7 @@
   "description": "Marketplace for the spec-driven formal verification plugin",
   "owner": {
     "name": "Andrue Anderson",
-    "email": "andrue@example.com"
+    "email": "andrue.anderson.cs@gmail.com"
   },
   "plugins": [
     {
