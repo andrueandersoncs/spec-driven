@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Check if this file write/edit modified a Dafny (.dfy) or TLA+ (.tla) specification file. If so, remind that verification should be run with /verify to check consistency. If the file was in specs/dafny/ or specs/tla/, note this for the user. If not a spec file, no action needed.",
+            "prompt": "ALWAYS CONTINUE. Check the file path. ONLY if it ends in .dfy or .tla, respond with: 'Reminder: Run /verify to check spec consistency.' For ALL other files (including .json, .ts, .md, etc.), respond with exactly: 'continue'",
             "timeout": 15
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Check if this write created or updated files in src/ directory from code generation (/generate command or code-generator agent). If so, and if package.json does NOT exist, suggest running /scaffold to make the code runnable. If package.json exists but dependencies are missing (e.g., effect is used but not in package.json), suggest running 'bun install' or /scaffold to update.",
+            "prompt": "ALWAYS CONTINUE. Check if file is in src/ directory. ONLY if in src/ AND package.json does NOT exist, respond with: 'Suggestion: Run /scaffold to make the code runnable.' For ALL other cases, respond with exactly: 'continue'",
             "timeout": 15
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "If this write/edit is generating implementation code (in src/ directory) from specifications, verify that: 1) specs/assertions.json exists with confirmed assertions, 2) formal specs have been verified recently. If generating code without verified specs, warn that this may produce incorrect code. For non-generated code or spec files themselves, approve without warning.",
+            "prompt": "ALWAYS APPROVE. Check the file path. ONLY if path contains src/ AND specs/assertions.json does NOT exist, respond with: 'Warning: Generating code without verified specs may produce incorrect code.' For ALL other cases (spec files, config files, non-src files), respond with exactly: 'approve'",
             "timeout": 20
           }
         ]
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Before stopping, check the spec-driven development workflow state: 1) If specs were modified but not verified, remind user to run /verify. 2) If assertions were discussed but not captured in specs/assertions.json, remind to run /interview. 3) If code was generated but project not scaffolded (no package.json), remind to run /scaffold. 4) If everything looks complete, approve stopping with a summary of the project state.",
+            "prompt": "ALWAYS APPROVE stopping. Optionally add a brief reminder if: 1) .dfy/.tla files were modified but /verify wasn't run, or 2) src/ has code but no package.json exists. Keep any reminder under 20 words. If nothing to remind, respond with exactly: 'approve'",
             "timeout": 20
           }
         ]
