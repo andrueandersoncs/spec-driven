@@ -6,7 +6,7 @@ model: sonnet
 
 # Verification Orchestration
 
-Run formal verification tools and interpret results.
+Run formal verification tools and interpret results with progressive disclosure.
 
 ## Prerequisites
 
@@ -16,143 +16,120 @@ Check that specs exist:
 
 If no specs exist, instruct user to run `/probe-domain` and `/interview` first.
 
-## Environment Check
+## Quick Verification (Recommended Default)
 
-Tools are run via Nix for reproducible environments. No local installation required.
-
-If user prefers a persistent shell, provide flake.nix template location:
-`${CLAUDE_PLUGIN_ROOT}/templates/flake.nix`
-
-They can copy it to their project and run `nix develop` for a full development shell with aliases.
-
-## Dafny Verification
-
-See [Verification](https://dafny.org/latest/DafnyRef/DafnyRef#sec-verification) in the Dafny Reference Manual for detailed guidance on debugging verification failures.
-
-### Run Verifier
+Run all verification with summary output:
 
 ```bash
-nix-shell -p dafny --run "dafny verify specs/dafny/*.dfy" 2>&1
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/verify-all.sh --summary
 ```
 
-### Interpret Results
+This provides a one-line status for each tool. If verification passes, proceed to inform user and suggest `/generate`.
 
-**On Success (Verified)**:
-- Report: "✓ Dafny verification passed - structural specifications are consistent"
-- List number of methods/invariants verified
+## Handling Verification Failures
 
-**On Failure**:
-- Parse error output to identify failing construct
-- Map error back to source assertion(s) using traceability comments
-- Explain failure in plain language
+If summary shows failures, use progressive disclosure to avoid overwhelming the user.
 
-Common Dafny errors and explanations:
+### Step 1: Show Summary First
 
-| Error Pattern | Plain Language |
-|---------------|----------------|
-| "precondition might not hold" | A method is called without ensuring its requirements are met |
-| "postcondition might not hold" | The method body doesn't guarantee what it promises |
-| "invariant might not hold" | A state constraint could be violated |
-| "assertion might not hold" | An explicit assertion could be false |
-| "decreases might not decrease" | A loop or recursion might not terminate |
+Parse the summary to identify which tool failed:
+- Dafny failures → structural specification issues
+- TLC failures → behavioral specification issues
 
-### Suggest Fixes
+### Step 2: Ask User for Detail Level
 
-For each failure:
-1. Identify the specific assertion or code involved
-2. Explain what condition could cause the failure
-3. Propose fix options:
-   - Strengthen precondition (add requires)
-   - Weaken postcondition (relax ensures)
-   - Add missing invariant
-   - Fix implementation logic
+**Question**: "Verification found issues. How much detail would you like?"
+**Options**:
+- Show error list with locations (recommended for fixing)
+- Show full output for first error only
+- Show all details (may be verbose)
+- Skip details, let me try to fix automatically
 
-Ask user which approach to take.
+### Step 3: Get Detailed Output Based on Choice
 
-## TLA+ Model Checking
-
-See the [TLA+ Repository](https://github.com/tlaplus/tlaplus) for tool documentation and the [TLA+ Examples](https://github.com/tlaplus/Examples) for reference specifications.
-
-### Run TLC
-
+**For Dafny errors** (if user wants details):
 ```bash
-nix-shell -p tlaplus --run "tlc specs/tla/behavior.tla -config specs/tla/behavior.cfg" 2>&1
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-dafny-verify.sh --errors
 ```
 
-### Interpret Results
+**For TLC errors** (if user wants trace):
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-tlc.sh --trace
+```
 
-**On Success (No errors)**:
-- Report: "✓ TLC model checking passed - behavioral properties hold"
-- Report state space explored (states, distinct states)
+**For full output** (only if user explicitly requests):
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-dafny-verify.sh --full
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-tlc.sh --full
+```
 
-**On Invariant Violation**:
-- Parse counterexample trace
-- Explain the sequence of states that violates the invariant
-- Map back to source assertions
+## Interpreting Dafny Results
 
-**On Liveness Violation**:
-- Parse the lasso-shaped counterexample
-- Explain the cycle that prevents progress
-- Identify missing fairness conditions or spec issues
+The `--errors` output is a JSON array. For each error:
 
-**On Deadlock**:
-- Explain that no actions are enabled from some reachable state
-- Show the deadlocked state
-- Suggest adding actions or fixing guards
+| Error Type | Plain Language | Common Fix |
+|------------|----------------|------------|
+| `precondition` | Method called without ensuring its requirements | Add assertions before call or strengthen caller's preconditions |
+| `postcondition` | Method body doesn't guarantee its promises | Fix implementation or weaken postcondition |
+| `invariant` | State constraint could be violated | Fix method body or add missing invariant |
+| `assertion` | Explicit assertion could be false | Add intermediate assertions to guide prover |
+| `termination` | Loop or recursion might not terminate | Add explicit `decreases` clause |
+| `syntax` | Code doesn't parse | Fix syntax error (often predicate return types) |
 
-### Common TLC Issues
+For detailed error explanations, see `skills/dafny-patterns/references/common-errors.md`.
 
-| Issue | Plain Language |
-|-------|----------------|
-| Invariant violated | A safety property fails in some reachable state |
-| Temporal property violated | A liveness property fails (something doesn't eventually happen) |
-| Deadlock reached | System gets stuck with no possible next action |
-| State space too large | Model is too big to check exhaustively |
+## Interpreting TLC Results
 
-For detailed TLC documentation, see the [TLA+ Cheatsheet](https://lamport.azurewebsites.net/tla/summary-standalone.pdf) or the [TLA+ Home](https://lamport.azurewebsites.net/tla/tla.html) for the video course.
+The `--trace` output shows an abbreviated counterexample (first 5 states + last).
 
-### Suggest Fixes
+| Violation Type | Meaning | Common Fix |
+|----------------|---------|------------|
+| `invariant` | Safety property fails in some reachable state | Strengthen action guards or fix invariant |
+| `temporal` | Liveness property fails (something doesn't eventually happen) | Add fairness conditions or fix spec |
+| `deadlock` | System gets stuck with no enabled actions | Add actions or fix guards |
 
-For invariant violations:
-1. Show the counterexample trace in plain language
-2. Identify which state transition caused the violation
-3. Propose fix: strengthen action guards, add missing checks
+For detailed TLC guidance, see `skills/tla-patterns/references/tlc-guide.md`.
 
-For liveness violations:
-1. Show the cycle preventing progress
-2. Identify fairness issues
-3. Propose fix: add weak/strong fairness, fix action enablement
+## Suggest Fixes
+
+For each failure, provide:
+
+1. **Plain language explanation** of what went wrong
+2. **Source location** (file:line from error output)
+3. **Proposed fix options**:
+   - For Dafny: strengthen precondition, weaken postcondition, add invariant, fix implementation
+   - For TLC: add fairness, strengthen guards, add action
+
+Ask user which approach to take before making changes.
 
 ## Cross-Model Consistency
 
 After individual verification succeeds, check cross-model consistency:
 
-1. Every TLA+ action should preserve Dafny invariants
+1. **Every TLA+ action should preserve Dafny invariants**
    - Simulate: Can TLA+ action produce state violating Dafny invariant?
 
-2. Every Dafny method should have TLA+ counterpart
+2. **Every Dafny method should have TLA+ counterpart**
    - Check: Does each Dafny method have corresponding TLA+ action?
 
-3. Type constraints align
+3. **Type constraints align**
    - Check: Do Dafny refinement types match TLA+ type invariants?
 
 Report any inconsistencies found.
 
 ## Verification Summary
 
-Provide summary:
+After all checks, provide summary:
 
 ```
 Verification Results
 ====================
 Dafny (Structure): [PASSED/FAILED]
   - Methods verified: N
-  - Invariants verified: N
   - Issues: [list if any]
 
 TLC (Behavior): [PASSED/FAILED]
-  - States explored: N
-  - Properties checked: N
+  - States explored: N (distinct: M)
   - Issues: [list if any]
 
 Cross-Model: [CONSISTENT/INCONSISTENT]
@@ -167,9 +144,23 @@ Next Steps:
 
 If verification fails, offer to help resolve:
 
-**Question**: "Verification found issues. How would you like to proceed?"
+**Question**: "Would you like help resolving these issues?"
 **Options**:
 - Fix automatically - Apply suggested fixes
 - Explain more - Get detailed explanation of failures
 - Modify assertion - Change the underlying assertion
 - Skip for now - Mark issue for later
+
+## Available Scripts Reference
+
+| Script | Purpose |
+|--------|---------|
+| `verify-all.sh --summary` | Quick pass/fail for both tools |
+| `verify-all.sh --detailed` | Full JSON breakdown |
+| `run-dafny-verify.sh --summary` | Dafny summary only |
+| `run-dafny-verify.sh --errors` | Dafny errors as JSON array |
+| `run-dafny-verify.sh --full` | Complete Dafny output |
+| `run-tlc.sh --summary` | TLC summary only |
+| `run-tlc.sh --trace` | Abbreviated counterexample |
+| `run-tlc.sh --trace-full` | Complete counterexample |
+| `run-tlc.sh --violated` | List of violated properties |

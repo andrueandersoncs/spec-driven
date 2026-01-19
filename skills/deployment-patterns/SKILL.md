@@ -10,29 +10,27 @@ Generate production-ready Docker deployments for spec-driven TypeScript applicat
 
 ## Core Principles
 
-1. **[Multi-stage builds](https://docs.docker.com/build/building/multi-stage/)** - Separate build and runtime stages for smaller, more secure images
+1. **Multi-stage builds** - Separate build and runtime stages for smaller, more secure images
 2. **Minimal images** - Use slim/distroless bases to reduce attack surface
-3. **[Non-root execution](https://docs.docker.com/engine/security/#linux-kernel-capabilities)** - Security by default; containers don't need real root privileges
-4. **[Health checks](https://docs.docker.com/reference/dockerfile/#healthcheck)** - Derived from specifications for orchestrator integration
+3. **Non-root execution** - Security by default; containers don't need real root privileges
+4. **Health checks** - Derived from specifications for orchestrator integration
 5. **Environment-based config** - No secrets in images; use runtime environment variables
 
-## Bun Dockerfile Patterns
+For comprehensive Docker documentation, see **`references/docker-reference.md`**.
 
-> **Reference**: [Dockerfile reference](https://docs.docker.com/reference/dockerfile/) | [Best practices](https://docs.docker.com/build/building/best-practices/)
+## Bun Dockerfile Patterns
 
 ### Web Service (Production)
 
 ```dockerfile
 # syntax=docker/dockerfile:1
-# Enables BuildKit features. See: https://docs.docker.com/build/buildkit/
 # @generated from specs
 
-# Build stage - see: https://docs.docker.com/build/building/multi-stage/
+# Build stage
 FROM oven/bun:1 AS builder
 WORKDIR /app
 
 # Install dependencies first for better layer caching
-# See: https://docs.docker.com/build/cache/#order-your-layers
 COPY package.json bun.lockb ./
 RUN bun install --frozen-lockfile --production=false
 
@@ -41,8 +39,7 @@ COPY src/ ./src/
 COPY tsconfig.json ./
 RUN bun build src/index.ts --outdir dist --target bun --minify
 
-# Production stage - use slim image to reduce attack surface
-# See: https://docs.docker.com/build/building/best-practices/#use-multi-stage-builds
+# Production stage - use slim image
 FROM oven/bun:1-slim AS production
 WORKDIR /app
 
@@ -52,11 +49,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
 
 # Security: run as non-root user
-# See: https://docs.docker.com/reference/dockerfile/#user
 USER bun
 
 # Health check for container orchestration
-# See: https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD bun run dist/health.js || exit 1
 
@@ -85,7 +80,6 @@ RUN bun build src/index.ts --compile --outfile dist/cli
 # Minimal runtime (just the binary)
 FROM debian:bookworm-slim AS production
 
-# Install minimal dependencies for Bun binary
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -129,17 +123,12 @@ CMD ["bun", "run", "src/index.ts"]
 
 ## Docker Compose Patterns
 
-> **Reference**: [Compose file reference](https://docs.docker.com/reference/compose-file/) | [Compose specification](https://docs.docker.com/reference/compose-file/version-and-name/)
->
-> **Note**: The `version` field is [obsolete](https://docs.docker.com/reference/compose-file/version-and-name/) and should be omitted. Docker Compose always uses the most recent schema.
+> **Note**: The `version` field is obsolete and should be omitted. Docker Compose always uses the most recent schema.
 
 ### Basic Web Service
 
 ```yaml
 # docker-compose.yml
-# Note: version field is obsolete and omitted
-# See: https://docs.docker.com/reference/compose-file/version-and-name/
-
 services:
   app:
     build:
@@ -150,13 +139,12 @@ services:
       - "${PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
-    # See: https://docs.docker.com/reference/compose-file/services/#healthcheck
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-    restart: unless-stopped  # See: https://docs.docker.com/reference/compose-file/services/#restart
+    restart: unless-stopped
 ```
 
 ### With Database (from spec assertions)
@@ -164,8 +152,6 @@ services:
 ```yaml
 # docker-compose.yml
 # Generated because specs include persistence assertions
-# Note: version field is obsolete and omitted
-
 services:
   app:
     build: .
@@ -174,8 +160,6 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://app:${DB_PASSWORD}@db:5432/appdb
-    # Wait for db healthcheck before starting
-    # See: https://docs.docker.com/reference/compose-file/services/#depends_on
     depends_on:
       db:
         condition: service_healthy
@@ -183,8 +167,6 @@ services:
 
   db:
     image: postgres:16-alpine
-    # Named volumes for data persistence
-    # See: https://docs.docker.com/reference/compose-file/volumes/
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
@@ -205,8 +187,6 @@ volumes:
 
 ```yaml
 # docker-compose.dev.yml
-# Note: version field is obsolete and omitted
-
 services:
   app:
     build:
@@ -214,8 +194,6 @@ services:
       target: builder  # Use builder stage with dev deps
     ports:
       - "${PORT:-3000}:3000"
-    # Bind mount for development hot reload
-    # See: https://docs.docker.com/reference/compose-file/services/#volumes
     volumes:
       - ./src:/app/src:ro  # Mount source read-only for hot reload
     environment:
@@ -252,7 +230,6 @@ export async function healthCheck(): Promise<HealthStatus> {
   // Add checks based on spec dependencies
   // checks.database = await checkDatabase();
   // checks.cache = await checkCache();
-  // checks.externalApi = await checkExternalApi();
 
   const hasFailure = Object.values(checks).some(c => c.status === 'fail');
 
@@ -261,33 +238,6 @@ export async function healthCheck(): Promise<HealthStatus> {
     timestamp: new Date().toISOString(),
     checks
   };
-}
-```
-
-### Health Check with Dependencies
-
-```typescript
-// src/health.ts
-// Generated from specs with database/cache assertions
-
-async function checkDatabase(): Promise<CheckResult> {
-  const start = Date.now();
-  try {
-    await db.query('SELECT 1');
-    return { status: 'ok', latency: Date.now() - start };
-  } catch (e) {
-    return { status: 'fail', message: String(e) };
-  }
-}
-
-async function checkCache(): Promise<CheckResult> {
-  const start = Date.now();
-  try {
-    await cache.ping();
-    return { status: 'ok', latency: Date.now() - start };
-  } catch (e) {
-    return { status: 'fail', message: String(e) };
-  }
 }
 ```
 
@@ -347,42 +297,29 @@ LABEL org.opencontainers.image.version="0.1.0"
 LABEL com.spec-driven.verified="true"
 LABEL com.spec-driven.verified-at="2024-01-15T10:30:00Z"
 LABEL com.spec-driven.assertions="5"
-LABEL com.spec-driven.dafny-verified="true"
-LABEL com.spec-driven.tlc-verified="true"
 ```
 
 ## Security Hardening
 
-> **Reference**: [Docker security overview](https://docs.docker.com/engine/security/) | [Security best practices](https://docs.docker.com/build/building/best-practices/#user)
-
 ### Non-Root User
 
-Running containers as non-root users provides defense-in-depth. Even if an attacker escalates privileges within the container, they have far fewer capabilities than real root.
-
 ```dockerfile
-# Create non-root user with explicit UID for consistency
-# See: https://docs.docker.com/reference/dockerfile/#user
+# For custom images: create non-root user with explicit UID
 RUN useradd -r -s /bin/false -u 1001 appuser
-
-# Set ownership of application files
 RUN chown -R appuser:appuser /app
-
-# Switch to non-root user for runtime
 USER appuser
+
+# For Bun images: use built-in 'bun' user
+USER bun
 ```
 
 ### Read-Only Filesystem
 
-Prevents runtime modification of the container filesystem, limiting attacker capabilities.
-
 ```yaml
 # docker-compose.yml
-# See: https://docs.docker.com/reference/compose-file/services/#read_only
 services:
   app:
     read_only: true
-    # tmpfs mounts for writable directories that need to exist
-    # See: https://docs.docker.com/reference/compose-file/services/#tmpfs
     tmpfs:
       - /tmp
     volumes:
@@ -392,11 +329,8 @@ services:
 
 ### Resource Limits
 
-Prevents denial-of-service attacks and ensures fair resource distribution in multi-container environments.
-
 ```yaml
 # docker-compose.yml
-# See: https://docs.docker.com/reference/compose-file/deploy/#resources
 services:
   app:
     deploy:
@@ -411,13 +345,8 @@ services:
 
 ## Build Context and .dockerignore
 
-> **Reference**: [.dockerignore documentation](https://docs.docker.com/build/concepts/context/#dockerignore-files)
-
-Exclude unnecessary files from the build context to speed up builds and reduce image size.
-
 ```gitignore
 # .dockerignore
-# Exclude development and test artifacts
 node_modules
 *.log
 .git
@@ -426,20 +355,13 @@ coverage/
 tests/
 *.test.ts
 *.spec.ts
-
-# Exclude documentation and config
 README.md
 CHANGELOG.md
 .env
 .env.*
 !.env.example
-
-# Exclude build tools
 .github/
 .vscode/
-*.md
-
-# Exclude specs (not needed at runtime)
 specs/
 generated/
 ```
@@ -448,77 +370,12 @@ generated/
 
 ### Reference Files
 
-For comprehensive Docker documentation and patterns:
-- **`references/docker-reference.md`** - Complete Docker reference for Bun applications including Dockerfile instructions, multi-stage builds, Compose configuration, health checks, and security best practices
+- **`references/docker-reference.md`** - Complete Docker reference for Bun applications including Dockerfile instructions, multi-stage builds, Compose configuration, health checks, security best practices, and all official documentation links
 
 ### Example Files
 
-Working examples ready to copy and customize:
 - **`examples/Dockerfile.web-service`** - Production-ready web service Dockerfile
 - **`examples/Dockerfile.cli`** - CLI tool compiled binary Dockerfile
 - **`examples/docker-compose.yml`** - Full production deployment with PostgreSQL
 - **`examples/docker-compose.dev.yml`** - Development environment with hot reloading
 - **`examples/health.ts`** - Health check endpoint implementation
-
-## Docker Documentation References
-
-### Dockerfile
-
-| Topic | Documentation |
-|-------|---------------|
-| Dockerfile reference | https://docs.docker.com/reference/dockerfile/ |
-| Best practices | https://docs.docker.com/build/building/best-practices/ |
-| Multi-stage builds | https://docs.docker.com/build/building/multi-stage/ |
-| BuildKit | https://docs.docker.com/build/buildkit/ |
-| Build cache | https://docs.docker.com/build/cache/ |
-| .dockerignore | https://docs.docker.com/build/concepts/context/#dockerignore-files |
-
-### Dockerfile Instructions
-
-| Instruction | Documentation |
-|-------------|---------------|
-| FROM | https://docs.docker.com/reference/dockerfile/#from |
-| USER | https://docs.docker.com/reference/dockerfile/#user |
-| HEALTHCHECK | https://docs.docker.com/reference/dockerfile/#healthcheck |
-| LABEL | https://docs.docker.com/reference/dockerfile/#label |
-| COPY | https://docs.docker.com/reference/dockerfile/#copy |
-| RUN | https://docs.docker.com/reference/dockerfile/#run |
-| CMD | https://docs.docker.com/reference/dockerfile/#cmd |
-| ENTRYPOINT | https://docs.docker.com/reference/dockerfile/#entrypoint |
-
-### Docker Compose
-
-| Topic | Documentation |
-|-------|---------------|
-| Compose file reference | https://docs.docker.com/reference/compose-file/ |
-| Services configuration | https://docs.docker.com/reference/compose-file/services/ |
-| Version field (obsolete) | https://docs.docker.com/reference/compose-file/version-and-name/ |
-| Volumes | https://docs.docker.com/reference/compose-file/volumes/ |
-| Networks | https://docs.docker.com/reference/compose-file/networks/ |
-
-### Compose Service Options
-
-| Option | Documentation |
-|--------|---------------|
-| healthcheck | https://docs.docker.com/reference/compose-file/services/#healthcheck |
-| depends_on | https://docs.docker.com/reference/compose-file/services/#depends_on |
-| deploy (resources) | https://docs.docker.com/reference/compose-file/deploy/#resources |
-| read_only | https://docs.docker.com/reference/compose-file/services/#read_only |
-| restart | https://docs.docker.com/reference/compose-file/services/#restart |
-| tmpfs | https://docs.docker.com/reference/compose-file/services/#tmpfs |
-| volumes | https://docs.docker.com/reference/compose-file/services/#volumes |
-
-### Security
-
-| Topic | Documentation |
-|-------|---------------|
-| Docker security overview | https://docs.docker.com/engine/security/ |
-| Content trust | https://docs.docker.com/engine/security/trust/ |
-| Seccomp profiles | https://docs.docker.com/engine/security/seccomp/ |
-| AppArmor profiles | https://docs.docker.com/engine/security/apparmor/ |
-
-### OCI Standards
-
-| Topic | Documentation |
-|-------|---------------|
-| Image labels spec | https://github.com/opencontainers/image-spec/blob/main/annotations.md |

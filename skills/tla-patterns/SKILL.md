@@ -282,40 +282,25 @@ Consume ==
     /\ queue' = Tail(queue)
 ```
 
-## Model Checking Configuration
-
-### Basic Config
-
-```
-\* behavior.cfg
-SPECIFICATION Spec
-INVARIANT TypeOK
-INVARIANT SafetyInvariant
-PROPERTY LivenessProperty
-```
-
-### Constants
-
-```
-\* Define constants for model checking
-CONSTANT
-    Processes = {p1, p2, p3}
-    MaxBalance = 1000
-    MaxItems = 10
-```
-
-### State Constraints (for finite model checking)
-
-```
-\* Limit state space for tractable checking
-CONSTRAINT
-    balance <= 10000
-    Len(transactions) <= 20
-```
-
 ## Running TLC
 
-All commands use `nix-shell -p tlaplus` for reproducible environments:
+Use the provided scripts for standardized verification:
+
+```bash
+# Quick summary
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-tlc.sh --summary
+
+# Abbreviated counterexample trace (on failure)
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-tlc.sh --trace
+
+# Full trace for debugging
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-tlc.sh --trace-full
+
+# List violated properties
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-tlc.sh --violated
+```
+
+### Manual TLC Commands
 
 ```bash
 # Basic check
@@ -324,22 +309,9 @@ nix-shell -p tlaplus --run "tlc behavior.tla -config behavior.cfg"
 # With workers
 nix-shell -p tlaplus --run "tlc -workers 4 behavior.tla -config behavior.cfg"
 
-# Generate traces (requires graphviz for visualization)
-nix-shell -p tlaplus --run "tlc -dump dot states.dot behavior.tla"
-
-# Check specific depth
-nix-shell -p tlaplus --run "tlc -depth 100 behavior.tla"
+# Generate state graph (requires graphviz)
+nix-shell -p tlaplus graphviz --run "tlc -dump dot states.dot behavior.tla && dot -Tpng states.dot -o states.png"
 ```
-
-### Interpreting Results
-
-| Result | Meaning | Action |
-|--------|---------|--------|
-| `No errors` | All properties hold | Spec is consistent |
-| `Invariant X violated` | Safety property fails | Fix spec or weaken property |
-| `Temporal property violated` | Liveness fails | Add fairness or fix spec |
-| `Deadlock reached` | No enabled actions | Add action or fix guards |
-| `State space too large` | Model too big | Add constraints or symmetry |
 
 ## Dafny Correspondence
 
@@ -354,140 +326,23 @@ Map TLA+ constructs to Dafny for cross-model consistency:
 | Unprimed `x` | `old(x)` in postcondition |
 | Primed `x'` | `x` in postcondition |
 
-## Distributed Systems Patterns
-
-These patterns are commonly used in real-world distributed systems. See the [TLA+ Examples repository](https://github.com/tlaplus/Examples) for complete implementations.
-
-### Pattern: Two-Phase Commit
-
-```tla
-\* Natural language: "All participants agree to commit or all abort"
-VARIABLES rmState, tmState
-
-TypeOK ==
-    /\ rmState \in [ResourceManagers -> {"working", "prepared", "committed", "aborted"}]
-    /\ tmState \in {"init", "committed", "aborted"}
-
-\* Transaction manager decides based on all participants
-TMCommit ==
-    /\ tmState = "init"
-    /\ \A rm \in ResourceManagers: rmState[rm] = "prepared"
-    /\ tmState' = "committed"
-    /\ UNCHANGED rmState
-
-TMAbort ==
-    /\ tmState = "init"
-    /\ tmState' = "aborted"
-    /\ UNCHANGED rmState
-
-\* Safety: Never both committed and aborted
-Consistency ==
-    ~(\E rm1, rm2 \in ResourceManagers:
-        rmState[rm1] = "committed" /\ rmState[rm2] = "aborted")
-```
-
-### Pattern: Leader Election
-
-```tla
-\* Natural language: "Exactly one leader at any time"
-VARIABLES leader, term
-
-TypeOK ==
-    /\ leader \in Nodes \union {None}
-    /\ term \in Nat
-
-\* Safety: At most one leader per term
-OneLeaderPerTerm ==
-    \A n1, n2 \in Nodes:
-        (leader = n1 /\ leader = n2) => n1 = n2
-
-\* Liveness: Eventually a leader is elected
-EventuallyLeader == <>(leader # None)
-
-BecomeLeader(n) ==
-    /\ leader = None
-    /\ \* Election condition (majority vote, etc.)
-    /\ leader' = n
-    /\ term' = term + 1
-```
-
-### Pattern: Termination Detection (Ring)
-
-```tla
-\* Natural language: "Detect when all processes are idle"
-\* Based on EWD840 from TLA+ Examples
-VARIABLES active, color, token
-
-TypeOK ==
-    /\ active \in [Nodes -> BOOLEAN]
-    /\ color \in [Nodes -> {"white", "black"}]
-    /\ token \in [pos: Nodes, color: {"white", "black"}]
-
-\* Safety: Only declare termination when all truly idle
-TerminationSafe ==
-    terminated => \A n \in Nodes: ~active[n]
-
-\* Process can become active if it receives a message
-BecomeActive(n) ==
-    /\ ~active[n]
-    /\ active' = [active EXCEPT ![n] = TRUE]
-    /\ UNCHANGED <<color, token>>
-```
-
-## Consensus Patterns
-
-### Pattern: Quorum Agreement
-
-```tla
-\* Natural language: "Decisions require majority agreement"
-CONSTANTS Nodes, Quorums
-
-\* A quorum system: any two quorums intersect
-ASSUME QuorumAssumption ==
-    /\ \A Q \in Quorums: Q \subseteq Nodes
-    /\ \A Q1, Q2 \in Quorums: Q1 \cap Q2 # {}
-
-VARIABLES votes
-
-\* A value is chosen if a quorum votes for it
-Chosen(v) == \E Q \in Quorums: \A n \in Q: votes[n] = v
-
-\* Safety: At most one value chosen
-Agreement ==
-    \A v1, v2 \in Values:
-        (Chosen(v1) /\ Chosen(v2)) => v1 = v2
-```
-
-### Pattern: Paxos Prepare Phase
-
-```tla
-\* Natural language: "Proposer must get promises before proposing"
-\* Simplified from TLA+ Examples Paxos specification
-VARIABLES promised, accepted
-
-Prepare(p, b) ==
-    \* Proposer p sends prepare with ballot b
-    /\ \* ... proposer logic
-    /\ UNCHANGED accepted
-
-Promise(a, p, b) ==
-    \* Acceptor a promises to proposer p for ballot b
-    /\ promised[a] < b
-    /\ promised' = [promised EXCEPT ![a] = b]
-    /\ \* Return any previously accepted value
-    /\ UNCHANGED accepted
-```
-
 ## Additional Resources
 
 ### Reference Files
-- **`references/tlc-guide.md`** - Comprehensive TLC model checker guide with command-line options, error interpretation, and debugging techniques (from official TLA+ docs)
-- **`references/tla-operators.md`** - Complete TLA+ operators reference including logic, sets, functions, sequences, temporal operators, and standard modules
+
+- **`references/tlc-guide.md`** - Comprehensive TLC model checker guide with command-line options, error interpretation, and debugging techniques
+- **`references/tla-operators.md`** - Complete TLA+ operators reference including logic, sets, functions, sequences, and temporal operators
+- **`references/distributed-patterns.md`** - Two-Phase Commit, Leader Election, Termination Detection patterns with complete specifications
+- **`references/consensus-patterns.md`** - Paxos, Raft, Quorum Agreement patterns with complete specifications
 
 ### Example Files
-- **`examples/account.tla`** - Complete banking state machine with safety and liveness properties
+
+- **`examples/Channel.tla`** - FIFO channel specification from TLA+ Examples
+- **`examples/TCommit.tla`** - Transaction commit specification from TLA+ Examples
+- **`examples/TwoPhase.tla`** - Two-phase commit protocol from TLA+ Examples
 
 ### Official TLA+ Resources
+
 | Resource | Description |
 |----------|-------------|
 | [TLA+ Repository](https://github.com/tlaplus/tlaplus) | Official TLA+ tools including TLC model checker and SANY parser |
@@ -495,13 +350,3 @@ Promise(a, p, b) ==
 | [TLA+ Cheatsheet (PDF)](https://lamport.azurewebsites.net/tla/summary-standalone.pdf) | Quick reference for operators and syntax |
 | [TLA+ Home](https://lamport.azurewebsites.net/tla/tla.html) | Official website with video course |
 | [Learn TLA+](https://learntla.com/) | Interactive tutorial with examples |
-
-### Notable Examples from TLA+ Examples Repository
-| Specification | Pattern Demonstrated |
-|---------------|---------------------|
-| `Paxos` | Consensus algorithm with safety proofs |
-| `TwoPhase` | Distributed transaction commit protocol |
-| `EWD840` | Termination detection in a ring |
-| `Raft` | Leader-based consensus protocol |
-| `DiningPhilosophers` | Classic mutual exclusion problem |
-| `ReadersWriters` | Concurrent access control |

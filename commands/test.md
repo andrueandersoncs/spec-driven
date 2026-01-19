@@ -9,14 +9,19 @@ model: sonnet
 
 Run generated tests and map results back to source assertions.
 
-## Prerequisites
+## Prerequisites Check
 
-Check that the project is scaffolded:
-- `package.json` exists
-- `node_modules/` exists (or run `bun install`)
-- `tests/` directory with test files
+First, verify the project is properly scaffolded:
 
-If not scaffolded, instruct user to run `/scaffold` first.
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-scaffolded.sh --json
+```
+
+**If status is "not_scaffolded"**: Instruct user to run `/scaffold` first.
+
+**If status is "needs_install"**: Run `bun install` before proceeding.
+
+**If status is "ready"**: Proceed with test execution.
 
 ## Test Execution
 
@@ -47,54 +52,67 @@ If `$ARGUMENTS` contains a test file pattern:
 bun test $ARGUMENTS
 ```
 
+## Progressive Disclosure for Test Failures
+
+When tests fail, use progressive disclosure to help users focus on what matters.
+
+### Step 1: Show Summary First
+
+Parse test output to extract:
+- Total tests run
+- Tests passed
+- Tests failed
+- Test files with failures
+
+Present a concise summary:
+```
+Test Results: 45 passed, 3 failed (2 files)
+```
+
+### Step 2: Ask User for Detail Level
+
+**Question**: "3 tests failed. How would you like to see the failures?"
+**Options**:
+- Show failed test names and assertions (recommended)
+- Show first failure with full stack trace
+- Show all failures with stack traces
+- Skip to assertion coverage report
+
+### Step 3: Progressive Detail
+
+Based on user choice, show appropriate level of detail. Avoid dumping full stack traces unless explicitly requested.
+
 ## Assertion Coverage Analysis
 
 After tests complete, analyze coverage against assertions.
 
-### 1. Parse Test Results
+### 1. Extract Assertion Links from Test Files
 
-Extract from Bun test output:
-- Test file names
-- Test descriptions
-- Pass/fail status
-- Error messages for failures
+Search test files for `@source-assertion` comments:
 
-### 2. Extract Assertion Links
-
-Read each test file and extract `@source-assertion` comments:
-
-```typescript
-// tests/account.test.ts
-/**
- * @source-assertion A-001: "Account balance never negative"
- * @source-assertion A-002: "Withdraw requires sufficient funds"
- */
+```bash
+grep -r "@source-assertion" tests/ 2>/dev/null || echo "No assertion links found"
 ```
 
 Build a map: `test file → [assertion IDs]`
 
-### 3. Load Assertion Manifest
+### 2. Load Assertion Manifest
 
-Read `specs/assertions.json` to get full assertion list:
+Read `specs/assertions.json` to get full assertion list.
 
-```json
-{
-  "assertions": [
-    { "id": "A-001", "text": "Account balance never negative", "status": "confirmed" },
-    { "id": "A-002", "text": "Withdraw requires sufficient funds", "status": "confirmed" },
-    { "id": "A-003", "text": "Transfer is atomic", "status": "confirmed" }
-  ]
-}
+Use the validation script to ensure manifest is valid:
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-assertions.sh specs/assertions.json
 ```
 
-### 4. Compute Coverage
+### 3. Compute Coverage
 
 For each assertion:
 - Count tests that reference it
 - Count passing vs failing tests
 - Identify assertions with no tests
 
-### 5. Generate Report
+### 4. Generate Report
 
 ```
 Assertion Coverage Report
@@ -119,54 +137,40 @@ Test Summary: 5 passed, 0 failed
 Assertion Coverage: 67% (2/3)
 ```
 
-## Failure Analysis
+## Failure Analysis with Progressive Disclosure
 
-When tests fail, map failures back to assertions:
+When tests fail, map failures back to assertions.
 
-### 1. Parse Error Message
+### Step 1: Identify Failed Test
 
-Extract:
+Extract from test output:
 - Test name
-- Assertion that failed
-- Expected vs actual values
-- Stack trace location
+- Test file and line
+- Error message (first line only initially)
 
-### 2. Link to Source Spec
+### Step 2: Link to Source Spec
 
 From the test file's `@source-assertion` comment, find:
-- The assertion text
+- The assertion text from assertions.json
 - The source spec file and line range
-- The Dafny/TLA+ constraint
 
-### 3. Explain Failure
+### Step 3: Explain Failure (Concise First)
 
 ```
-Test Failure Analysis
-=====================
-
 FAILED: "balance never negative after withdraw"
-  tests/account.test.ts:28
-
-Linked Assertion: A-001
-  "Account balance never negative"
-  Source: specs/dafny/structure.dfy:12-15
-
-  invariant Valid() { balance >= 0 }
-
-What went wrong:
-  The test generated a case where:
-  - Initial balance: 50
-  - Withdraw amount: 100
-  - Result balance: -50 (violated invariant)
-
-Possible causes:
-  1. Generated validation doesn't check insufficient funds
-  2. Test is using invalid input (property test found edge case)
-  3. Spec is incomplete (missing precondition)
-
-Recommended action:
-  Check src/validation/account.ts line 18 - ensure amount <= balance check
+  └─ tests/account.test.ts:28
+  └─ Linked to: A-001 (specs/dafny/structure.dfy:12-15)
+  └─ Error: Expected balance >= 0, got -50
 ```
+
+### Step 4: Offer More Detail
+
+**Question**: "Would you like more details about this failure?"
+**Options**:
+- Show the full stack trace
+- Show the relevant spec code
+- Show the test code
+- Try to fix automatically
 
 ## Integration with Formal Verification
 
@@ -174,12 +178,12 @@ Recommended action:
 
 If tests fail but verification passed:
 - The generated code may not correctly implement the spec
-- Re-run `/generate` to regenerate
+- Suggest re-running `/generate` to regenerate
 - Check traceability links for discrepancies
 
 If both tests and verification fail:
 - The spec itself has issues
-- Run `/resolve-conflict` to fix
+- Suggest running `/resolve-conflict` to fix
 
 ### Property Test → Formal Proof Gap
 
@@ -190,24 +194,6 @@ If property tests pass but you want higher assurance:
 - Review the Dafny verification output
 - Consider adding more specific assertions
 - Run TLC with larger state bounds
-
-## Continuous Testing
-
-### Watch Mode Integration
-
-When running in watch mode:
-1. Tests re-run on file changes
-2. Assertion coverage updates live
-3. Failures are immediately linked to specs
-
-### CI Integration
-
-Generate assertion coverage for CI:
-
-```bash
-bun test --coverage > test-output.txt
-# Parse and generate coverage badge/report
-```
 
 ## Report Files
 
@@ -256,3 +242,11 @@ Next Steps:
   • Run /verify to ensure formal proofs still hold
   • Run /dev to start development server
 ```
+
+## Available Scripts Reference
+
+| Script | Purpose |
+|--------|---------|
+| `check-scaffolded.sh` | Verify project is ready for testing |
+| `check-scaffolded.sh --json` | JSON status of scaffold components |
+| `validate-assertions.sh` | Validate assertions.json schema |
