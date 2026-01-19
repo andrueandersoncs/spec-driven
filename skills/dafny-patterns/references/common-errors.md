@@ -1,6 +1,80 @@
-# Dafny Verification Errors Reference
+# Dafny Errors Reference
 
 > **Source**: This reference consolidates information from the [Dafny Error Catalog](https://dafny.org/latest/HowToFAQ/Errors) and [How-to FAQ Guide](http://dafny.org/dafny/HowToFAQ/).
+
+## Syntax Errors
+
+Syntax errors occur before verification and must be fixed first.
+
+### Predicate Return Type Error
+
+**Error**: "unexpected token" or "expected" near predicate return type
+
+| Aspect | Details |
+|--------|---------|
+| **Cause** | Adding `: bool` return type to a predicate |
+| **Fix** | Remove the return type—predicates implicitly return `bool` |
+
+```dafny
+// ❌ WRONG: predicate with explicit return type
+predicate IsPositive(x: int): bool {  // Syntax error!
+  x > 0
+}
+
+// ✅ CORRECT: predicate without return type
+predicate IsPositive(x: int) {
+  x > 0
+}
+```
+
+**Why this happens**: In many languages, boolean-returning functions need explicit types. Dafny predicates are special—they ALWAYS return `bool`, so specifying it is both redundant and invalid syntax.
+
+### Function Missing Return Type Error
+
+**Error**: "a function must have a return type"
+
+| Aspect | Details |
+|--------|---------|
+| **Cause** | Omitting the return type from a function |
+| **Fix** | Add `: ReturnType` after parameters |
+
+```dafny
+// ❌ WRONG: function without return type
+function Square(x: int) {  // Error: missing return type
+  x * x
+}
+
+// ✅ CORRECT: function with return type
+function Square(x: int): int {
+  x * x
+}
+```
+
+### Method vs Function Return Confusion
+
+**Error**: Various syntax errors around return declarations
+
+| Construct | Return Syntax | Example |
+|-----------|---------------|---------|
+| `method` | `returns (name: Type)` | `method Foo() returns (r: int)` |
+| `function` | `: Type` | `function Foo(): int` |
+| `predicate` | None | `predicate Foo()` |
+
+```dafny
+// ❌ WRONG: method with function-style return
+method Compute(x: int): int { ... }  // Error!
+
+// ✅ CORRECT: method with proper returns clause
+method Compute(x: int) returns (result: int) { ... }
+
+// ❌ WRONG: function with method-style return
+function Compute(x: int) returns (result: int) { ... }  // Error!
+
+// ✅ CORRECT: function with colon return type
+function Compute(x: int): int { ... }
+```
+
+---
 
 ## Understanding Verification Errors
 

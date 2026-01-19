@@ -6,12 +6,74 @@ Comprehensive reference for Dafny syntax, types, and verification constructs.
 
 ## Table of Contents
 
+- [Critical Syntax Rules](#critical-syntax-rules)
 - [Types](#types)
 - [Statements](#statements)
 - [Expressions](#expressions)
 - [Specifications](#specifications)
 - [Classes and Modules](#classes-and-modules)
 - [Verification Hints](#verification-hints)
+
+---
+
+## Critical Syntax Rules
+
+**These rules cause common syntax errors. Follow them exactly.**
+
+### Predicates vs Functions
+
+| Construct | Return Type | Syntax |
+|-----------|-------------|--------|
+| `predicate` | **NEVER specify** (implicitly `bool`) | `predicate Name(params) { ... }` |
+| `function` | **ALWAYS specify** | `function Name(params): ReturnType { ... }` |
+
+```dafny
+// ✅ CORRECT: predicate without return type
+predicate IsValid(x: int) {
+  x > 0
+}
+
+// ❌ WRONG: predicate with return type (syntax error)
+predicate IsValid(x: int): bool {  // ERROR: predicates don't take return types
+  x > 0
+}
+
+// ✅ CORRECT: function with return type
+function Square(x: int): int {
+  x * x
+}
+
+// ❌ WRONG: function without return type (syntax error)
+function Square(x: int) {  // ERROR: functions require return types
+  x * x
+}
+```
+
+### Ghost Modifiers
+
+```dafny
+// ✅ CORRECT: ghost predicate (for class invariants)
+ghost predicate Valid()
+  reads this
+{
+  balance >= 0
+}
+
+// ✅ CORRECT: ghost function
+ghost function Spec(x: int): int {
+  x + 1
+}
+```
+
+### Method vs Function Return Syntax
+
+```dafny
+// Methods use `returns` keyword
+method Compute(x: int) returns (result: int)
+
+// Functions use `:` for return type
+function Compute(x: int): int
+```
 
 ---
 

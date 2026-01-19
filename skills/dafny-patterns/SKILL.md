@@ -212,6 +212,16 @@ method FindUser(id: UserId) returns (user: User?)
 
 Reusable boolean conditions. See [Predicates](https://dafny.org/latest/DafnyRef/DafnyRef#642-predicates) in the Dafny Reference Manual.
 
+> **CRITICAL SYNTAX RULE**: Predicates NEVER have an explicit return type. They always return `bool` implicitly.
+>
+> ```dafny
+> // ✅ CORRECT
+> predicate IsValid(x: int) { x > 0 }
+>
+> // ❌ WRONG - syntax error
+> predicate IsValid(x: int): bool { x > 0 }
+> ```
+
 ### Pattern: Validation Predicate
 
 ```dafny
