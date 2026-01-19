@@ -288,15 +288,17 @@ See [Verification](https://dafny.org/latest/DafnyRef/DafnyRef#sec-verification) 
 
 ### Running Verification
 
+All commands use `nix-shell -p dafny` for reproducible environments:
+
 ```bash
 # Verify single file
-dafny verify specs/dafny/structure.dfy
+nix-shell -p dafny --run "dafny verify specs/dafny/structure.dfy"
 
 # Verify with timeout
-dafny verify --verification-time-limit:60 specs/dafny/structure.dfy
+nix-shell -p dafny --run "dafny verify --verification-time-limit:60 specs/dafny/structure.dfy"
 
 # Verify all files
-dafny verify specs/dafny/*.dfy
+nix-shell -p dafny --run "dafny verify specs/dafny/*.dfy"
 ```
 
 ### Interpreting Results
@@ -334,13 +336,13 @@ Dafny compiles to multiple targets. See [Compilation](https://dafny.org/latest/D
 
 ```bash
 # To JavaScript (for TypeScript projects)
-dafny build --target:js specs/dafny/structure.dfy -o generated/structure.js
+nix-shell -p dafny --run "dafny build --target:js specs/dafny/structure.dfy -o generated/structure.js"
 
 # To other targets
-dafny build --target:cs  # C#
-dafny build --target:java  # Java
-dafny build --target:go  # Go
-dafny build --target:py  # Python
+nix-shell -p dafny --run "dafny build --target:cs specs/dafny/structure.dfy"   # C#
+nix-shell -p dafny --run "dafny build --target:java specs/dafny/structure.dfy" # Java
+nix-shell -p dafny --run "dafny build --target:go specs/dafny/structure.dfy"   # Go
+nix-shell -p dafny --run "dafny build --target:py specs/dafny/structure.dfy"   # Python
 ```
 
 ## TLA+ Correspondence

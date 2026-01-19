@@ -1,3 +1,14 @@
+# Spec-driven development environment
+#
+# Usage:
+#   nix develop              - Enter the development shell with all tools
+#   nix develop --command bash -c "dafny verify ..."  - Run a single command
+#
+# Alternative (without flake.nix):
+#   nix-shell -p dafny --run "dafny verify ..."
+#   nix-shell -p tlaplus --run "tlc ..."
+#   nix-shell -p dafny tlaplus bun --run "..."  # Multiple packages
+#
 {
   description = "Spec-driven development environment with Dafny, TLA+, and Bun";
 

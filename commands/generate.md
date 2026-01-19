@@ -47,7 +47,7 @@ Dafny can compile verified code directly to multiple target languages. See [Comp
 
 ```bash
 # Compile Dafny to JavaScript
-dafny build --target:js specs/dafny/structure.dfy -o generated/structure.js
+nix-shell -p dafny --run "dafny build --target:js specs/dafny/structure.dfy -o generated/structure.js"
 ```
 
 ### Generate Type Declarations

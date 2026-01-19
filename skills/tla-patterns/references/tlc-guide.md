@@ -10,38 +10,34 @@ TLC is an explicit-state model checker for TLA+ specifications. It systematicall
 
 ## Installation
 
-### Download Release
-
-Download the latest release from: https://github.com/tlaplus/tlaplus/releases/
-
-### Build from Source
+TLC is available via Nix for reproducible environments. No manual installation required.
 
 ```bash
-# Requirements: JDK 11 and ant
-cd tlaplus/tlatools/org.lamport.tlatools
-ant -f customBuild.xml compile dist
-# Output: dist/tla2tools.jar
+# Run TLC directly via nix-shell
+nix-shell -p tlaplus --run "tlc MySpec.tla"
 ```
+
+For a persistent development shell with aliases, copy the flake.nix template to your project and run `nix develop`.
 
 ## Running TLC
 
 ### Basic Invocation
 
 ```bash
-java -jar tla2tools.jar MySpec.tla
+nix-shell -p tlaplus --run "tlc MySpec.tla"
 ```
 
 TLC automatically searches for `MySpec.cfg` in the same directory.
 
 ### Performance Optimization
 
-For optimal throughput, use the parallel garbage collector:
+The Nix package includes optimized defaults. For explicit control:
 
 ```bash
-java -XX:+UseParallelGC -jar tla2tools.jar MySpec.tla
+nix-shell -p tlaplus --run "tlc -workers auto MySpec.tla"
 ```
 
-> **Note**: This setting improves both simulation and model-checking performance compared to G1GC.
+> **Note**: The `tlaplus` Nix package handles JVM optimization automatically.
 
 ## Essential Command-Line Options
 
@@ -63,19 +59,19 @@ java -XX:+UseParallelGC -jar tla2tools.jar MySpec.tla
 
 ```bash
 # Use 4 worker threads
-java -jar tla2tools.jar -workers 4 MySpec.tla
+nix-shell -p tlaplus --run "tlc -workers 4 MySpec.tla"
 
 # Run simulation mode
-java -jar tla2tools.jar -simulate -depth 1000 MySpec.tla
+nix-shell -p tlaplus --run "tlc -simulate -depth 1000 MySpec.tla"
 
 # Dump error trace as JSON
-java -jar tla2tools.jar -dumpTrace json errors.json MySpec.tla
+nix-shell -p tlaplus --run "tlc -dumpTrace json errors.json MySpec.tla"
 
 # Continue after first violation (find multiple bugs)
-java -jar tla2tools.jar -continue MySpec.tla
+nix-shell -p tlaplus --run "tlc -continue MySpec.tla"
 
 # Get help
-java -jar tla2tools.jar -help
+nix-shell -p tlaplus --run "tlc -help"
 ```
 
 ## Interpreting TLC Results
@@ -185,7 +181,7 @@ Control when liveness is checked with `-lncheck`:
 | `seqfinal` | Sequential final check (use for large models) |
 
 ```bash
-java -jar tla2tools.jar -lncheck final MySpec.tla
+nix-shell -p tlaplus --run "tlc -lncheck final MySpec.tla"
 ```
 
 ## Debugging Techniques
@@ -193,7 +189,7 @@ java -jar tla2tools.jar -lncheck final MySpec.tla
 ### Debug Mode
 
 ```bash
-java -jar tla2tools.jar -debugger nosuspend MySpec.tla
+nix-shell -p tlaplus --run "tlc -debugger nosuspend MySpec.tla"
 ```
 
 Integrates with the TLA+ VSCode extension for:
@@ -206,16 +202,16 @@ Integrates with the TLA+ VSCode extension for:
 For small models, use single-worker mode for consistent depth reporting:
 
 ```bash
-java -jar tla2tools.jar -workers 1 MySpec.tla
+nix-shell -p tlaplus --run "tlc -workers 1 MySpec.tla"
 ```
 
 ### Generate State Graph
 
 ```bash
-java -jar tla2tools.jar -dump dot states.dot MySpec.tla
+nix-shell -p tlaplus graphviz --run "tlc -dump dot states.dot MySpec.tla && dot -Tpng states.dot -o states.png"
 ```
 
-Produces a GraphViz DOT file for visualization.
+Produces a GraphViz DOT file for visualization. The command above also converts it to PNG.
 
 ## Configuration File (.cfg)
 

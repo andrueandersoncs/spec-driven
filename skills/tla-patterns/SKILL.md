@@ -315,18 +315,20 @@ CONSTRAINT
 
 ## Running TLC
 
+All commands use `nix-shell -p tlaplus` for reproducible environments:
+
 ```bash
 # Basic check
-tlc behavior.tla -config behavior.cfg
+nix-shell -p tlaplus --run "tlc behavior.tla -config behavior.cfg"
 
 # With workers
-tlc -workers 4 behavior.tla -config behavior.cfg
+nix-shell -p tlaplus --run "tlc -workers 4 behavior.tla -config behavior.cfg"
 
-# Generate traces
-tlc -dump dot states.dot behavior.tla
+# Generate traces (requires graphviz for visualization)
+nix-shell -p tlaplus --run "tlc -dump dot states.dot behavior.tla"
 
 # Check specific depth
-tlc -depth 100 behavior.tla
+nix-shell -p tlaplus --run "tlc -depth 100 behavior.tla"
 ```
 
 ### Interpreting Results

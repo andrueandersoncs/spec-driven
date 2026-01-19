@@ -18,17 +18,12 @@ If no specs exist, instruct user to run `/probe-domain` and `/interview` first.
 
 ## Environment Check
 
-Verify tools are available:
+Tools are run via Nix for reproducible environments. No local installation required.
 
-```bash
-which dafny || echo "DAFNY_MISSING"
-which tlc || java -cp /path/to/tla2tools.jar tlc2.TLC -h 2>/dev/null || echo "TLC_MISSING"
-```
-
-If tools missing, provide flake.nix template location:
+If user prefers a persistent shell, provide flake.nix template location:
 `${CLAUDE_PLUGIN_ROOT}/templates/flake.nix`
 
-Instruct user to enter nix develop shell or install tools manually.
+They can copy it to their project and run `nix develop` for a full development shell with aliases.
 
 ## Dafny Verification
 
@@ -37,7 +32,7 @@ See [Verification](https://dafny.org/latest/DafnyRef/DafnyRef#sec-verification) 
 ### Run Verifier
 
 ```bash
-dafny verify specs/dafny/*.dfy 2>&1
+nix-shell -p dafny --run "dafny verify specs/dafny/*.dfy" 2>&1
 ```
 
 ### Interpret Results
@@ -81,7 +76,7 @@ See the [TLA+ Repository](https://github.com/tlaplus/tlaplus) for tool documenta
 ### Run TLC
 
 ```bash
-tlc specs/tla/behavior.tla -config specs/tla/behavior.cfg 2>&1
+nix-shell -p tlaplus --run "tlc specs/tla/behavior.tla -config specs/tla/behavior.cfg" 2>&1
 ```
 
 ### Interpret Results

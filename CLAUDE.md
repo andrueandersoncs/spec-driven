@@ -165,11 +165,16 @@ Any markdown content here provides additional context for the plugin.
 
 ## External Tool Requirements
 
-- **Bun**: Runtime for generated TypeScript (v1.0+)
-- **Dafny**: `dafny verify` and `dafny build` commands
-- **TLA+**: `tlc` (TLC model checker)
+All formal verification tools are run via **Nix** for reproducible environments:
+
+- **Nix** (required): Package manager for reproducible tool execution
+  - Install: `curl -L https://nixos.org/nix/install | sh`
+- **Dafny**: Run via `nix-shell -p dafny --run "dafny verify ..."`
+- **TLA+/TLC**: Run via `nix-shell -p tlaplus --run "tlc ..."`
+- **Bun**: Run via `nix-shell -p bun --run "bun ..."` or install directly
 - **Docker**: For deployment artifacts (optional)
-- **Nix** (optional): `nix develop` for reproducible environment
+
+For a persistent development shell with aliases, copy `templates/flake.nix` to your project and run `nix develop`.
 
 ## Code Generation Modes
 

@@ -16,7 +16,19 @@ This plugin enables Claude Code to act as a **specification-driven development a
 
 ### Prerequisites
 
-The plugin requires Dafny and TLA+ tools. The easiest way to get them is with Nix:
+The plugin uses **Nix** to run Dafny and TLA+ tools. This ensures reproducible environments without manual installation.
+
+**Install Nix** (if not already installed):
+
+```bash
+curl -L https://nixos.org/nix/install | sh
+```
+
+That's it! Tools are fetched automatically when needed via `nix-shell -p`.
+
+### Optional: Persistent Development Shell
+
+For a persistent shell with aliases and project detection, copy the flake.nix template:
 
 ```bash
 # Copy the flake.nix template to your project
@@ -26,9 +38,10 @@ cp /path/to/plugin/templates/flake.nix ./flake.nix
 nix develop
 ```
 
-Or install manually:
-- **Dafny**: https://github.com/dafny-lang/dafny/releases (see [Dafny Reference Manual](https://dafny.org/latest/DafnyRef/DafnyRef))
-- **TLA+ Tools**: https://github.com/tlaplus/tlaplus/releases (see [TLA+ Resources](#tla-resources) below)
+This provides:
+- Pre-configured aliases (`verify-dafny`, `verify-tla`, `tlc`, `tlc4`, etc.)
+- Automatic project detection
+- All tools available without `nix-shell -p` prefix
 
 ### Plugin Installation
 
